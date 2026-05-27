@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Scan golden test glossary</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="tzimtzum">
+        <min:subjectField>kabbalah</min:subjectField>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>tzimtzum</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+          <termSec>
+            <term>contraction</term>
+            <min:administrativeStatus>deprecatedTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>צמצום</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="sefirah">
+        <min:subjectField>kabbalah</min:subjectField>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>sefirah</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>ספירה</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="divine-light">
+        <min:subjectField>kabbalah</min:subjectField>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>divine light</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>אור אין סוף</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"file":"testdata/fixtures/scan-multiword.md","matches":[{"concept_id":"divine-light","term":"divine light","lang":"en","status":"preferred","line":1,"column":5,"context":"The divine light emanates from the Ein Sof."}],"summary":{"total_matches":1,"unique_concepts":1}}

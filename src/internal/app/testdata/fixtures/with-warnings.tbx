@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Test fixture with warnings</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="c1">
+        <min:subjectField>test</min:subjectField>
+        <basic:crossReference target="nonexistent">see nonexistent</basic:crossReference>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>alpha</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="c1">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>beta</term>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"concepts":1,"languages":["en"],"warnings":[{"code":"invalid_picklist","message":"partOfSpeech value \"frobnicator\" not in accepted set","concept_id":"c1","line":17,"column":31}]}

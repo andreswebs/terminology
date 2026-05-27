@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>All categories fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="complete">
+        <descrip type="subjectField">philosophy</descrip>
+        <descrip type="definition">A concept with all data categories</descrip>
+        <ref type="crossReference" target="related">see also</ref>
+        <xref type="externalCrossReference" target="https://example.com/ref"/>
+        <xref type="xGraphic" target="https://example.com/img.png"/>
+        <admin type="source">Encyclopedia of Philosophy</admin>
+        <admin type="customerSubset">academic</admin>
+        <admin type="projectSubset">translations</admin>
+        <note>General note</note>
+        <langSec xml:lang="en">
+          <descrip type="definition">English-level definition</descrip>
+          <admin type="source">Oxford English Dictionary</admin>
+          <termSec>
+            <term>completeness</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="partOfSpeech">noun</termNote>
+            <termNote type="grammaticalGender">neuter</termNote>
+            <termNote type="grammaticalNumber">singular</termNote>
+            <termNote type="register">technicalRegister</termNote>
+            <termNote type="termType">fullForm</termNote>
+            <termNote type="termLocation">checkBox</termNote>
+            <termNote type="geographicalUsage">North America</termNote>
+            <descrip type="context">In the context of formal logic</descrip>
+            <termNote type="transferComment">Translate carefully</termNote>
+            <adminGrp>
+              <admin type="reading">kuhm-pleet-nis</admin>
+              <adminNote type="readingNote">IPA approximation</adminNote>
+            </adminGrp>
+            <admin type="source">Academic corpus</admin>
+            <admin type="customerSubset">term-customer</admin>
+            <admin type="projectSubset">term-project</admin>
+            <xref type="externalCrossReference" target="https://example.com/term-ref"/>
+            <ref type="crossReference" target="related-term">related term</ref>
+            <note>Term-level note</note>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

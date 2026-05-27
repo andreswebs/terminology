@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"invalid_id","message":"concept ID contains rejected characters","hint":"concept IDs must not contain control characters, path traversals, percent-encoded segments, or query parameters"}}

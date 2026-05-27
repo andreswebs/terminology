@@ -1,0 +1,1 @@
+{"ok":false,"schema_version":1,"summary":{"violations":1},"violations":[{"concept_id":"malkhut","expected_target":"מלכות","source_occurrences":1,"source_term":"malkhut","type":"missing"}]}

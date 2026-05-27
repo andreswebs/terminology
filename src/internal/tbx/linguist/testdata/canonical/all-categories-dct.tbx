@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>All categories fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="complete">
+        <min:subjectField>philosophy</min:subjectField>
+        <basic:definition>A concept with all data categories</basic:definition>
+        <basic:crossReference target="related">see also</basic:crossReference>
+        <min:externalCrossReference target="https://example.com/ref"/>
+        <basic:xGraphic target="https://example.com/img.png"/>
+        <basic:source>Encyclopedia of Philosophy</basic:source>
+        <min:customerSubset>academic</min:customerSubset>
+        <basic:projectSubset>translations</basic:projectSubset>
+        <note>General note</note>
+        <langSec xml:lang="en">
+          <basic:definition>English-level definition</basic:definition>
+          <basic:source>Oxford English Dictionary</basic:source>
+          <termSec>
+            <term>completeness</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <basic:grammaticalGender>neuter</basic:grammaticalGender>
+            <ling:grammaticalNumber>singular</ling:grammaticalNumber>
+            <ling:register>technicalRegister</ling:register>
+            <basic:termType>fullForm</basic:termType>
+            <basic:termLocation>checkBox</basic:termLocation>
+            <basic:geographicalUsage>North America</basic:geographicalUsage>
+            <basic:context>In the context of formal logic</basic:context>
+            <ling:transferComment>Translate carefully</ling:transferComment>
+            <adminGrp>
+              <ling:reading>kuhm-pleet-nis</ling:reading>
+              <ling:readingNote>IPA approximation</ling:readingNote>
+            </adminGrp>
+            <basic:source>Academic corpus</basic:source>
+            <min:customerSubset>term-customer</min:customerSubset>
+            <basic:projectSubset>term-project</basic:projectSubset>
+            <min:externalCrossReference target="https://example.com/term-ref"/>
+            <basic:crossReference target="related-term">related term</basic:crossReference>
+            <note>Term-level note</note>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

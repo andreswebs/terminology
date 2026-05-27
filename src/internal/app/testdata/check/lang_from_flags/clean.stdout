@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"source":"testdata/fixtures/check-source-nolang.md","target":"testdata/fixtures/check-target-nofm.md","violations":[],"warnings":[],"summary":{"violations":0,"warnings":0,"concepts_checked":1}}

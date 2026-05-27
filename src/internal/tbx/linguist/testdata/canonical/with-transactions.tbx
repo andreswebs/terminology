@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Transaction fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="sefirah">
+        <min:subjectField>kabbalah</min:subjectField>
+        <transacGrp>
+          <basic:transactionType>origination</basic:transactionType>
+          <date>2026-05-21T12:00:00Z</date>
+          <basic:responsibility>andre</basic:responsibility>
+        </transacGrp>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>sefirah</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <transacGrp>
+              <basic:transactionType>modification</basic:transactionType>
+              <date>2026-05-22T08:30:00Z</date>
+              <basic:responsibility>reviewer</basic:responsibility>
+            </transacGrp>
+          </termSec>
+          <termSec>
+            <term>sephira</term>
+            <min:administrativeStatus>admittedTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>ספירה</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <basic:grammaticalGender>feminine</basic:grammaticalGender>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

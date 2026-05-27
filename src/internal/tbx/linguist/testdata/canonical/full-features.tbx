@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Full features fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="binah">
+        <min:subjectField>kabbalah</min:subjectField>
+        <basic:definition>The third sefirah, understanding</basic:definition>
+        <note>Important concept in mystical tradition</note>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>binah</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <basic:context>In the context of the sefirot</basic:context>
+            <ling:transferComment>Keep untranslated in academic texts</ling:transferComment>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>בינה</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <min:partOfSpeech>noun</min:partOfSpeech>
+            <basic:grammaticalGender>feminine</basic:grammaticalGender>
+            <adminGrp>
+              <ling:reading>binah</ling:reading>
+              <ling:readingNote>Ashkenazi pronunciation</ling:readingNote>
+            </adminGrp>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

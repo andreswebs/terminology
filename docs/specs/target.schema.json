@@ -1,0 +1,1013 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/andreswebs/terminology/docs/specs/target.schema.json",
+  "title": "terminology CLI schema",
+  "description": "Target shape for the JSON document emitted by `terminology schema`. Describes every command, flag, picklist, error code, output shape, and exit code in the CLI. Generated at build time from urfave/cli/v3 metadata and the output struct types; embedded in the binary via stdlib `embed`. Agents are expected to retrieve this once at session start in lieu of pre-stuffed documentation.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "tool",
+    "envelopes",
+    "exit_codes",
+    "error_codes",
+    "picklists",
+    "global_flags",
+    "commands"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Version of this meta-schema. Bump when the shape of `terminology schema` output changes in a backwards-incompatible way.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "tool": {
+      "description": "Identity of the binary that produced this schema.",
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "const": "terminology" },
+        "version": {
+          "description": "Semantic version of the binary (from git describe at build time).",
+          "type": "string"
+        },
+        "description": { "type": "string" },
+        "tbx_dialect": {
+          "description": "TBX dialect supported on input; output is always canonical DCT.",
+          "type": "object",
+          "required": ["name", "namespace", "styles_in", "style_out"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "const": "TBX-Linguist" },
+            "namespace": { "type": "string", "format": "uri" },
+            "styles_in": {
+              "type": "array",
+              "items": { "enum": ["dct", "dca"] },
+              "uniqueItems": true,
+              "minItems": 1
+            },
+            "style_out": { "const": "dct" }
+          }
+        }
+      }
+    },
+    "envelopes": {
+      "description": "Stable JSON envelopes shared across all commands.",
+      "type": "object",
+      "required": ["success", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "description": "Success envelope written to stdout. Payload keys are command-specific; the `ok: true` discriminator is invariant.",
+          "type": "object",
+          "required": ["stream", "shape"],
+          "additionalProperties": false,
+          "properties": {
+            "stream": { "const": "stdout" },
+            "shape": {
+              "$ref": "#/$defs/jsonSchema"
+            }
+          }
+        },
+        "error": {
+          "description": "Error envelope written to stderr in JSON mode. In text mode the same data is rendered as human-readable text on stderr.",
+          "type": "object",
+          "required": ["stream", "shape"],
+          "additionalProperties": false,
+          "properties": {
+            "stream": { "const": "stderr" },
+            "shape": {
+              "$ref": "#/$defs/jsonSchema"
+            }
+          }
+        }
+      }
+    },
+    "exit_codes": {
+      "description": "Exit codes the binary may return. Stable across releases.",
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["code", "meaning"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "meaning": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "error_codes": {
+      "description": "Catalog of structured error codes any command may emit. Each entry names the code, the exit code it triggers, and which commands can produce it.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/errorCode" }
+    },
+    "picklists": {
+      "description": "Closed value sets for TBX data categories. Keys are category names; values are the accepted strings. Legacy aliases (e.g. `usageRegister` → `register`, bare `administrativeStatus` forms) are exposed under `aliases` on the per-category entry.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/picklist" }
+    },
+    "global_flags": {
+      "description": "Flags that apply to every command unless explicitly overridden. Per-command `flags` arrays only enumerate flags beyond these.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/flag" }
+    },
+    "commands": {
+      "description": "Catalog of every CLI command. Subcommands appear with their full dotted path (e.g. `concept.add`).",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/command" }
+    }
+  },
+  "$defs": {
+    "command": {
+      "type": "object",
+      "required": ["name", "kind", "synopsis", "description", "exit_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Dotted command path. Top-level commands have no dot (`validate`); subcommands use dots (`concept.add`, `term.deprecate`).",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$"
+        },
+        "kind": {
+          "description": "Whether this command mutates the TBX file.",
+          "enum": ["read", "write", "utility"]
+        },
+        "synopsis": {
+          "description": "Single-line usage string, suitable for help output.",
+          "type": "string"
+        },
+        "description": { "type": "string" },
+        "args": {
+          "description": "Positional arguments in order. Empty array if the command takes none.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/positional" }
+        },
+        "flags": {
+          "description": "Per-command flags. Excludes globals listed in `global_flags`.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/flag" }
+        },
+        "stdin": {
+          "description": "Whether the command reads payload data from stdin and in what formats. Omitted for commands that never read stdin.",
+          "type": "object",
+          "required": ["formats"],
+          "additionalProperties": false,
+          "properties": {
+            "required": { "type": "boolean", "default": false },
+            "formats": {
+              "type": "array",
+              "items": { "enum": ["json", "tbx"] },
+              "uniqueItems": true,
+              "minItems": 1
+            },
+            "shape": { "$ref": "#/$defs/jsonSchema" }
+          }
+        },
+        "output": {
+          "description": "Shape of the success-case payload (the body of the success envelope). Omitted if the command produces no payload beyond `ok: true`.",
+          "$ref": "#/$defs/jsonSchema"
+        },
+        "errors": {
+          "description": "Subset of top-level `error_codes` this command can emit.",
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "exit_codes": {
+          "description": "Exit codes this command can return, with the conditions that trigger each.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["code", "when"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "integer", "minimum": 0, "maximum": 255 },
+              "when": { "type": "string" }
+            }
+          }
+        },
+        "side_effects": {
+          "description": "Filesystem or environment side effects this command performs. Only present for `kind: write`.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "writes_tbx",
+              "reads_tbx",
+              "reads_markdown",
+              "appends_transaction"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "write" } } },
+          "then": { "required": ["side_effects"] }
+        }
+      ]
+    },
+    "flag": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Long form, with leading dashes.",
+          "type": "string",
+          "pattern": "^--[a-z][a-z0-9-]*$"
+        },
+        "short": {
+          "description": "Single-letter short form, with leading dash.",
+          "type": "string",
+          "pattern": "^-[a-zA-Z]$"
+        },
+        "type": {
+          "enum": ["string", "int", "bool", "list", "path", "lang", "id", "term", "enum"]
+        },
+        "description": { "type": "string" },
+        "default": {
+          "description": "Resolved default if the flag is omitted. `null` means no default."
+        },
+        "env": {
+          "description": "Environment variable consulted when the flag is omitted. Lower precedence than the flag itself.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "required": { "type": "boolean", "default": false },
+        "enum": {
+          "description": "Closed set of accepted values when `type` is `enum`, or a reference into `picklists` by name.",
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            { "type": "object", "required": ["picklist"], "additionalProperties": false, "properties": { "picklist": { "type": "string" } } }
+          ]
+        },
+        "hardening": {
+          "description": "Validation rules applied before the value is accepted. Reflects the `internal/harden` posture.",
+          "type": "array",
+          "items": {
+            "enum": [
+              "no-control-chars",
+              "no-path-traversal",
+              "no-percent-encoded",
+              "no-query-fragment",
+              "sandboxed-to-cwd",
+              "bcp47",
+              "slug",
+              "nonempty"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "repeatable": {
+          "description": "True if the flag can be specified multiple times (e.g. `--lang es --term foo --lang en --term bar` blocks).",
+          "type": "boolean",
+          "default": false
+        },
+        "conflicts_with": {
+          "description": "Flags that cannot be combined with this one.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^--[a-z][a-z0-9-]*$" },
+          "uniqueItems": true
+        },
+        "requires": {
+          "description": "Flags that must be present when this one is set.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^--[a-z][a-z0-9-]*$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "positional": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "type": {
+          "enum": ["string", "path", "lang", "id", "term"]
+        },
+        "description": { "type": "string" },
+        "variadic": { "type": "boolean", "default": false },
+        "required": { "type": "boolean", "default": true },
+        "hardening": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "no-control-chars",
+              "no-path-traversal",
+              "no-percent-encoded",
+              "no-query-fragment",
+              "sandboxed-to-cwd",
+              "bcp47",
+              "slug",
+              "nonempty"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "picklist": {
+      "type": "object",
+      "required": ["values"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "module": {
+          "description": "TBX module the category belongs to.",
+          "enum": ["Core", "Min", "Basic", "Linguist"]
+        },
+        "values": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "aliases": {
+          "description": "Legacy values accepted on read and normalized to a canonical value on emit.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "errorCode": {
+      "type": "object",
+      "required": ["code", "description", "exit_code"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "description": "Stable identifier for the error class. Snake_case.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "description": { "type": "string" },
+        "exit_code": { "type": "integer", "minimum": 1, "maximum": 255 },
+        "hint_template": {
+          "description": "Pattern used to generate the `hint` field on emitted errors. May contain `{placeholder}` tokens documented in the description.",
+          "type": "string"
+        },
+        "produced_by": {
+          "description": "Names of commands that can emit this error code.",
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      }
+    },
+    "jsonSchema": {
+      "description": "An inlined JSON Schema (Draft 2020-12) fragment describing the shape of a payload. Permissive on purpose: we want to embed real schemas without re-validating their internals here.",
+      "type": "object"
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0.0",
+      "tool": {
+        "name": "terminology",
+        "version": "0.1.0",
+        "description": "Agent-driven terminology checks for academic translation against a TBX-Linguist glossary.",
+        "tbx_dialect": {
+          "name": "TBX-Linguist",
+          "namespace": "urn:iso:std:iso:30042:ed-2",
+          "styles_in": ["dct", "dca"],
+          "style_out": "dct"
+        }
+      },
+      "envelopes": {
+        "success": {
+          "stream": "stdout",
+          "shape": {
+            "type": "object",
+            "required": ["ok"],
+            "properties": {
+              "ok": { "const": true }
+            },
+            "additionalProperties": true
+          }
+        },
+        "error": {
+          "stream": "stderr",
+          "shape": {
+            "type": "object",
+            "required": ["ok", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "ok": { "const": false },
+              "error": {
+                "type": "object",
+                "required": ["code", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "code": { "type": "string" },
+                  "message": { "type": "string" },
+                  "hint": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "exit_codes": [
+        { "code": 0, "meaning": "success" },
+        { "code": 1, "meaning": "actionable: not found or violations exist" },
+        { "code": 2, "meaning": "usage error" },
+        { "code": 3, "meaning": "I/O or storage error" },
+        {
+          "code": 65,
+          "meaning": "validation error",
+          "description": "The BSD `EX_DATAERR` convention. The input data (TBX file, write payload, or referenced ID) was rejected. The operation could not complete; state is unchanged. Retry with corrected input."
+        },
+        {
+          "code": 75,
+          "meaning": "under construction",
+          "description": "The requested command or code path is not implemented yet in this build. Transient: disappears once the corresponding ticket lands."
+        }
+      ],
+      "error_codes": [
+        {
+          "code": "no_tbx_path",
+          "description": "Neither --tbx nor TERMINOLOGY_TBX was provided.",
+          "exit_code": 2,
+          "hint_template": "set --tbx PATH or export TERMINOLOGY_TBX=PATH",
+          "produced_by": [
+            "validate", "lookup", "scan", "check", "extract",
+            "concept.add", "concept.update", "concept.remove",
+            "term.add", "term.deprecate", "apply"
+          ]
+        },
+        {
+          "code": "validation_error",
+          "description": "Generic input-rejection envelope used when no more specific code applies. Emitted by `validate` when the TBX file is unparseable or missing required structure, and by `apply` when one or more payload concepts failed validation (file left untouched). Specific input-rejection cases use the dedicated codes below (`duplicate_id`, `not_found`, `dangling_crossref`, `invalid_id`, `invalid_picklist`) — all of which share `exit_code: 65`.",
+          "exit_code": 65,
+          "hint_template": "fix the reported issues and retry",
+          "produced_by": ["validate", "apply", "schema"]
+        },
+        {
+          "code": "duplicate_id",
+          "description": "`concept add` was called for an ID that already exists.",
+          "exit_code": 65,
+          "hint_template": "use `terminology concept update {id}` to modify, or pick a different --id",
+          "produced_by": ["concept.add", "apply"]
+        },
+        {
+          "code": "not_found",
+          "description": "A targeted concept, term, or language section does not exist.",
+          "exit_code": 65,
+          "produced_by": ["concept.update", "concept.remove", "term.deprecate"]
+        },
+        {
+          "code": "dangling_crossref",
+          "description": "A write would introduce or leave an unresolved crossReference IDREF.",
+          "exit_code": 65,
+          "hint_template": "include '{target}' in the payload, or remove the crossReference",
+          "produced_by": ["concept.add", "concept.update", "concept.remove", "apply"]
+        },
+        {
+          "code": "invalid_id",
+          "description": "An ID failed hardening checks (control chars, traversal, percent-encoding, query fragment, empty after slugification).",
+          "exit_code": 65,
+          "produced_by": ["concept.add", "concept.update", "concept.remove", "term.add", "term.deprecate", "apply"]
+        },
+        {
+          "code": "invalid_picklist",
+          "description": "A picklist-valued flag or payload field received a value outside the accepted set.",
+          "exit_code": 65,
+          "produced_by": ["concept.add", "concept.update", "term.add", "term.deprecate", "apply"]
+        },
+        {
+          "code": "invalid_field",
+          "description": "`--fields` referenced a path that does not exist in the output shape.",
+          "exit_code": 2,
+          "produced_by": ["validate", "lookup", "scan", "check", "extract"]
+        },
+        {
+          "code": "io_error",
+          "description": "The TBX file or a markdown input could not be read or written.",
+          "exit_code": 3,
+          "produced_by": [
+            "validate", "lookup", "scan", "check", "extract",
+            "concept.add", "concept.update", "concept.remove",
+            "term.add", "term.deprecate", "apply"
+          ]
+        },
+        {
+          "code": "under_construction",
+          "description": "Scaffold-only response emitted by a command whose business logic has not been implemented yet. Goes away as each command's stub is replaced by its real action.",
+          "exit_code": 75,
+          "hint_template": "track progress in .tickets/ or rebuild from a newer commit",
+          "produced_by": [
+            "validate", "lookup", "scan", "check", "extract",
+            "concept.add", "concept.update", "concept.remove",
+            "term.add", "term.deprecate", "apply", "schema"
+          ]
+        }
+      ],
+      "picklists": {
+        "administrativeStatus": {
+          "module": "Min",
+          "values": [
+            "preferredTerm-admn-sts",
+            "admittedTerm-admn-sts",
+            "deprecatedTerm-admn-sts",
+            "supersededTerm-admn-sts"
+          ],
+          "aliases": {
+            "preferredTerm": "preferredTerm-admn-sts",
+            "admittedTerm": "admittedTerm-admn-sts",
+            "deprecatedTerm": "deprecatedTerm-admn-sts",
+            "supersededTerm": "supersededTerm-admn-sts"
+          }
+        },
+        "partOfSpeech": {
+          "module": "Min",
+          "values": ["noun", "verb", "adjective", "adverb", "other"]
+        },
+        "grammaticalGender": {
+          "module": "Basic",
+          "values": ["masculine", "feminine", "neuter", "other"]
+        },
+        "grammaticalNumber": {
+          "module": "Linguist",
+          "values": ["singular", "plural", "dual", "mass", "otherNumber"]
+        },
+        "register": {
+          "module": "Linguist",
+          "values": [
+            "colloquialRegister",
+            "neutralRegister",
+            "technicalRegister",
+            "in-houseRegister",
+            "bench-levelRegister",
+            "slangRegister",
+            "vulgarRegister"
+          ],
+          "aliases": { "usageRegister": "register" }
+        },
+        "termType": {
+          "module": "Basic",
+          "values": ["fullForm", "acronym", "abbreviation", "shortForm", "variant", "phrase"]
+        },
+        "transactionType": {
+          "module": "Basic",
+          "values": ["origination", "modification"]
+        },
+        "script": {
+          "description": "Script filter for `extract`.",
+          "values": ["latin", "hebrew", "cyrillic", "arabic", "any"]
+        }
+      },
+      "global_flags": [
+        {
+          "name": "--tbx",
+          "short": "-T",
+          "type": "path",
+          "description": "Path to the TBX file. Overrides TERMINOLOGY_TBX.",
+          "env": "TERMINOLOGY_TBX",
+          "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"]
+        },
+        {
+          "name": "--format",
+          "type": "enum",
+          "description": "Output format. JSON to stdout/stderr or indented text blocks to stdout/stderr.",
+          "default": "json",
+          "enum": ["json", "text"]
+        },
+        {
+          "name": "--fields",
+          "short": "-F",
+          "type": "list",
+          "description": "Comma-separated dotted paths to include beyond the command's default lean projection. `*` matches map keys. Only meaningful on read commands; passing it to a write/utility command is a usage error.",
+          "default": null
+        }
+      ],
+      "commands": [
+        {
+          "name": "validate",
+          "kind": "read",
+          "synopsis": "terminology validate [--strict]",
+          "description": "Validates the TBX file against the supported subset.",
+          "args": [],
+          "flags": [
+            {
+              "name": "--strict",
+              "type": "bool",
+              "description": "Warn on elements outside the supported set; promote unresolved crossReference IDREFs from warning to error.",
+              "default": false
+            }
+          ],
+          "output": {
+            "type": "object",
+            "required": ["ok", "concepts", "languages", "warnings"],
+            "additionalProperties": false,
+            "properties": {
+              "ok": { "type": "boolean" },
+              "concepts": { "type": "integer", "minimum": 0 },
+              "languages": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["code", "message"],
+                  "properties": {
+                    "code": { "type": "string" },
+                    "message": { "type": "string" },
+                    "concept_id": { "type": "string" },
+                    "line": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "invalid_field", "validation_error"],
+          "exit_codes": [
+            { "code": 0, "when": "file is valid and no warnings" },
+            { "code": 1, "when": "warnings present" },
+            { "code": 65, "when": "file unparseable or required structure missing" }
+          ]
+        },
+        {
+          "name": "lookup",
+          "kind": "read",
+          "synopsis": "terminology lookup TERM [--lang LANG] [--fields LIST]",
+          "description": "Look up a term across all languages in the TBX file. Default output is the lean projection: concept_id, subject_field, and per-language preferred term surface. Use --fields to opt into more.",
+          "args": [
+            {
+              "name": "TERM",
+              "type": "term",
+              "description": "Surface form to search for. Matched against <term> values in any <termSec>.",
+              "hardening": ["no-control-chars", "nonempty"]
+            }
+          ],
+          "flags": [
+            {
+              "name": "--lang",
+              "short": "-l",
+              "type": "lang",
+              "description": "Restrict search to a specific language section.",
+              "hardening": ["bcp47"]
+            }
+          ],
+          "output": {
+            "type": "object",
+            "required": ["ok", "results"],
+            "additionalProperties": false,
+            "properties": {
+              "ok": { "type": "boolean" },
+              "results": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/concept" }
+              }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "invalid_field"],
+          "exit_codes": [
+            { "code": 0, "when": "one or more results" },
+            { "code": 1, "when": "no results" }
+          ]
+        },
+        {
+          "name": "scan",
+          "kind": "read",
+          "synopsis": "terminology scan FILE [--lang LANG] [--fields LIST]",
+          "description": "Find all glossary term occurrences in a markdown file. Whole-word matching is Unicode-aware.",
+          "args": [
+            {
+              "name": "FILE",
+              "type": "path",
+              "description": "Markdown file to scan.",
+              "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"]
+            }
+          ],
+          "flags": [
+            { "name": "--lang", "short": "-l", "type": "lang", "description": "Restrict to one language section.", "hardening": ["bcp47"] }
+          ],
+          "output": {
+            "type": "object",
+            "required": ["ok", "file", "matches", "summary"],
+            "properties": {
+              "ok": { "const": true },
+              "file": { "type": "string" },
+              "matches": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/match" }
+              },
+              "summary": {
+                "type": "object",
+                "required": ["total_matches", "unique_concepts"],
+                "properties": {
+                  "total_matches": { "type": "integer", "minimum": 0 },
+                  "unique_concepts": { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "invalid_field"],
+          "exit_codes": [
+            { "code": 0, "when": "always (scanning is informational)" }
+          ]
+        },
+        {
+          "name": "check",
+          "kind": "read",
+          "synopsis": "terminology check SRC TGT [--source-lang LANG] [--target-lang LANG] [--strict] [--fields LIST]",
+          "description": "Verify a translated target file against a source file using the glossary. Violations embed the expected target term and a context window so an agent can fix in one pass.",
+          "args": [
+            { "name": "SRC", "type": "path", "description": "Source-language markdown.", "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"] },
+            { "name": "TGT", "type": "path", "description": "Target-language markdown.", "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"] }
+          ],
+          "flags": [
+            { "name": "--source-lang", "short": "-S", "type": "lang", "description": "Source language (default es).", "default": "es", "hardening": ["bcp47"] },
+            { "name": "--target-lang", "type": "lang", "description": "Target language (default en).", "default": "en", "hardening": ["bcp47"] },
+            { "name": "--strict", "type": "bool", "description": "Admitted variants raise violations instead of warnings.", "default": false }
+          ],
+          "output": {
+            "type": "object",
+            "required": ["ok", "source", "target", "violations", "warnings", "summary"],
+            "properties": {
+              "ok": { "type": "boolean" },
+              "source": { "type": "string" },
+              "target": { "type": "string" },
+              "violations": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/violation" }
+              },
+              "warnings": { "type": "array" },
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "violations": { "type": "integer" },
+                  "warnings": { "type": "integer" },
+                  "concepts_checked": { "type": "integer" }
+                }
+              }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "invalid_field"],
+          "exit_codes": [
+            { "code": 0, "when": "no violations" },
+            { "code": 1, "when": "one or more violations" }
+          ]
+        },
+        {
+          "name": "extract",
+          "kind": "read",
+          "synopsis": "terminology extract FILE... [--min-freq N] [--lang LANG] [--exclude PATH] [--script SCRIPT]",
+          "description": "Extract candidate terminology from one or more markdown files.",
+          "args": [
+            { "name": "FILE", "type": "path", "description": "One or more markdown files.", "variadic": true, "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"] }
+          ],
+          "flags": [
+            { "name": "--min-freq", "type": "int", "description": "Minimum occurrence count to include.", "default": 3 },
+            { "name": "--lang", "short": "-l", "type": "lang", "description": "Assume this language for the corpus (default: auto-detect per file).", "hardening": ["bcp47"] },
+            { "name": "--exclude", "short": "-x", "type": "path", "description": "Path to a TBX whose terms should be excluded from the output.", "hardening": ["no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment"] },
+            { "name": "--script", "type": "enum", "description": "Filter candidates by script.", "default": "any", "enum": { "picklist": "script" } }
+          ],
+          "output": {
+            "type": "object",
+            "required": ["ok", "candidates"],
+            "properties": {
+              "ok": { "const": true },
+              "candidates": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/candidate" }
+              }
+            }
+          },
+          "errors": ["io_error", "invalid_field"],
+          "exit_codes": [{ "code": 0, "when": "always" }]
+        },
+        {
+          "name": "concept.add",
+          "kind": "write",
+          "synopsis": "terminology concept add [--id ID] [--subject-field FIELD] [--lang LANG --term TERM ...] [--dry-run] [--transaction] [--author NAME]",
+          "description": "Create a new concept. ID is derived deterministically from the canonical-language preferred term unless --id overrides.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [],
+          "flags": [
+            { "name": "--id", "short": "-i", "type": "id", "description": "Override the derived concept ID.", "hardening": ["slug", "no-control-chars", "no-path-traversal", "no-percent-encoded", "no-query-fragment", "nonempty"] },
+            { "name": "--subject-field", "type": "string", "description": "Concept-level subjectField." },
+            { "name": "--canonical-lang", "type": "lang", "description": "Language used for slug derivation.", "default": "en", "env": "TERMINOLOGY_CANONICAL_LANG", "hardening": ["bcp47"] },
+            { "name": "--lang", "short": "-l", "type": "lang", "description": "Language tag; pairs with --term.", "repeatable": true, "requires": ["--term"], "hardening": ["bcp47"] },
+            { "name": "--term", "short": "-t", "type": "term", "description": "Preferred term surface; pairs with --lang.", "repeatable": true, "requires": ["--lang"], "hardening": ["no-control-chars", "nonempty"] },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "description": "Produce a final-state preview without writing.", "default": false },
+            { "name": "--transaction", "type": "bool", "description": "Append a modification <transacGrp> to the new concept.", "default": false },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction record.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "stdin": {
+            "required": false,
+            "formats": ["json", "tbx"],
+            "shape": { "$ref": "#/$defs/concept" }
+          },
+          "output": {
+            "type": "object",
+            "required": ["ok"],
+            "properties": {
+              "ok": { "const": true },
+              "concept": { "$ref": "#/$defs/concept" },
+              "preview": { "$ref": "#/$defs/concept" }
+            },
+            "oneOf": [
+              { "required": ["concept"] },
+              { "required": ["preview"] }
+            ]
+          },
+          "errors": ["no_tbx_path", "io_error", "duplicate_id", "dangling_crossref", "invalid_id", "invalid_picklist"],
+          "exit_codes": [
+            { "code": 0, "when": "concept created (or previewed under --dry-run)" },
+            { "code": 2, "when": "usage error" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "duplicate ID, invalid input, or dangling crossref" }
+          ]
+        },
+        {
+          "name": "concept.update",
+          "kind": "write",
+          "synopsis": "terminology concept update ID [--merge|--replace] [--dry-run] [--transaction] [--author NAME]",
+          "description": "Modify an existing concept. The concept ID is positional and never changes.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [
+            { "name": "ID", "type": "id", "description": "Existing concept ID.", "hardening": ["slug", "no-control-chars", "nonempty"] }
+          ],
+          "flags": [
+            { "name": "--merge", "type": "bool", "description": "Merge supplied fields with existing (default).", "default": true, "conflicts_with": ["--replace"] },
+            { "name": "--replace", "type": "bool", "description": "Replace the entire concept content (except its ID).", "default": false, "conflicts_with": ["--merge"] },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "default": false, "description": "Final-state preview without writing." },
+            { "name": "--transaction", "type": "bool", "default": false, "description": "Append a modification <transacGrp>." },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction record.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "stdin": {
+            "required": false,
+            "formats": ["json", "tbx"],
+            "shape": { "$ref": "#/$defs/concept" }
+          },
+          "output": { "type": "object", "properties": { "ok": { "const": true }, "concept": { "$ref": "#/$defs/concept" }, "preview": { "$ref": "#/$defs/concept" } } },
+          "errors": ["no_tbx_path", "io_error", "not_found", "dangling_crossref", "invalid_id", "invalid_picklist"],
+          "exit_codes": [
+            { "code": 0, "when": "concept updated" },
+            { "code": 2, "when": "usage error (e.g. conflicting --merge / --replace)" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "not found, invalid input, or dangling crossref" }
+          ]
+        },
+        {
+          "name": "concept.remove",
+          "kind": "write",
+          "synopsis": "terminology concept remove ID [--force] [--dry-run] [--transaction] [--author NAME]",
+          "description": "Delete a concept. Fails with dangling_crossref if other concepts reference ID, unless --force is set.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [
+            { "name": "ID", "type": "id", "description": "Concept ID to delete.", "hardening": ["slug", "no-control-chars", "nonempty"] }
+          ],
+          "flags": [
+            { "name": "--force", "type": "bool", "default": false, "description": "Allow deletion even if other concepts reference this ID." },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "default": false, "description": "Preview without writing." },
+            { "name": "--transaction", "type": "bool", "default": false, "description": "Append a modification <transacGrp> at file level (since the concept itself is gone)." },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction record.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "output": {
+            "type": "object",
+            "properties": {
+              "ok": { "const": true },
+              "removed": { "type": "string" }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "not_found", "dangling_crossref", "invalid_id"],
+          "exit_codes": [
+            { "code": 0, "when": "concept removed" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "not found, invalid input, or dangling crossref without --force" }
+          ]
+        },
+        {
+          "name": "term.add",
+          "kind": "write",
+          "synopsis": "terminology term add ID --lang LANG --term TERM [--status STATUS] [--part-of-speech POS] [--register REG] ... [--dry-run] [--transaction] [--author NAME]",
+          "description": "Add a <termSec> to an existing concept's <langSec>, creating the <langSec> if needed.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [
+            { "name": "ID", "type": "id", "description": "Existing concept ID.", "hardening": ["slug", "no-control-chars", "nonempty"] }
+          ],
+          "flags": [
+            { "name": "--lang", "short": "-l", "type": "lang", "required": true, "description": "Target language section.", "hardening": ["bcp47"] },
+            { "name": "--term", "short": "-t", "type": "term", "required": true, "description": "Term surface form.", "hardening": ["no-control-chars", "nonempty"] },
+            { "name": "--status", "short": "-s", "type": "enum", "description": "Administrative status.", "default": "admittedTerm-admn-sts", "enum": { "picklist": "administrativeStatus" } },
+            { "name": "--part-of-speech", "short": "-p", "type": "enum", "enum": { "picklist": "partOfSpeech" }, "description": "Part of speech." },
+            { "name": "--register", "short": "-r", "type": "enum", "enum": { "picklist": "register" }, "description": "Register." },
+            { "name": "--grammatical-gender", "type": "enum", "enum": { "picklist": "grammaticalGender" }, "description": "Grammatical gender." },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "default": false, "description": "Preview without writing." },
+            { "name": "--transaction", "type": "bool", "default": false, "description": "Append a modification <transacGrp>." },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction record.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "output": { "type": "object", "properties": { "ok": { "const": true }, "concept": { "$ref": "#/$defs/concept" }, "preview": { "$ref": "#/$defs/concept" } } },
+          "errors": ["no_tbx_path", "io_error", "not_found", "invalid_picklist", "invalid_id"],
+          "exit_codes": [
+            { "code": 0, "when": "term added" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "concept not found or invalid input" }
+          ]
+        },
+        {
+          "name": "term.deprecate",
+          "kind": "write",
+          "synopsis": "terminology term deprecate ID --lang LANG --term TERM [--dry-run] [--transaction] [--author NAME]",
+          "description": "Set an existing term's administrativeStatus to deprecatedTerm-admn-sts.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [
+            { "name": "ID", "type": "id", "description": "Existing concept ID.", "hardening": ["slug", "no-control-chars", "nonempty"] }
+          ],
+          "flags": [
+            { "name": "--lang", "short": "-l", "type": "lang", "required": true, "description": "Language section containing the term.", "hardening": ["bcp47"] },
+            { "name": "--term", "short": "-t", "type": "term", "required": true, "description": "Term surface to deprecate.", "hardening": ["no-control-chars", "nonempty"] },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "default": false, "description": "Preview without writing." },
+            { "name": "--transaction", "type": "bool", "default": false, "description": "Append a modification <transacGrp>." },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction record.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "output": { "type": "object", "properties": { "ok": { "const": true }, "concept": { "$ref": "#/$defs/concept" }, "preview": { "$ref": "#/$defs/concept" } } },
+          "errors": ["no_tbx_path", "io_error", "not_found", "invalid_id"],
+          "exit_codes": [
+            { "code": 0, "when": "term deprecated" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "term not found or invalid input" }
+          ]
+        },
+        {
+          "name": "apply",
+          "kind": "write",
+          "synopsis": "terminology apply -f PAYLOAD [--prune] [--dry-run] [--transaction] [--author NAME]",
+          "description": "Bulk declarative write: reconcile the existing TBX against a payload describing desired state for one or more concepts. Atomic at the file level — either all changes apply or none do.",
+          "side_effects": ["reads_tbx", "writes_tbx", "appends_transaction"],
+          "args": [],
+          "flags": [
+            { "name": "--file", "short": "-f", "type": "path", "required": true, "description": "Payload file. Use '-' for stdin." },
+            { "name": "--prune", "type": "bool", "default": false, "description": "Remove concepts present in the TBX but absent from the payload." },
+            { "name": "--dry-run", "short": "-n", "type": "bool", "default": false, "description": "Reconcile and preview without writing." },
+            { "name": "--transaction", "type": "bool", "default": false, "description": "Append a modification <transacGrp> to every touched concept." },
+            { "name": "--author", "short": "-a", "type": "string", "description": "Responsibility for the transaction records.", "env": "TERMINOLOGY_AUTHOR", "requires": ["--transaction"] }
+          ],
+          "stdin": {
+            "required": false,
+            "formats": ["json", "tbx"],
+            "shape": {
+              "type": "object",
+              "required": ["concepts"],
+              "properties": {
+                "concepts": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/concept" }
+                }
+              }
+            }
+          },
+          "output": {
+            "type": "object",
+            "required": ["ok", "applied"],
+            "properties": {
+              "ok": { "type": "boolean" },
+              "applied": {
+                "type": "object",
+                "required": ["added", "updated", "removed", "unchanged"],
+                "properties": {
+                  "added": { "type": "array", "items": { "type": "string" } },
+                  "updated": { "type": "array", "items": { "type": "string" } },
+                  "removed": { "type": "array", "items": { "type": "string" } },
+                  "unchanged": { "type": "array", "items": { "type": "string" } }
+                }
+              },
+              "warnings": { "type": "array" }
+            }
+          },
+          "errors": ["no_tbx_path", "io_error", "duplicate_id", "dangling_crossref", "invalid_id", "invalid_picklist", "validation_error"],
+          "exit_codes": [
+            { "code": 0, "when": "reconciliation succeeded (or previewed under --dry-run)" },
+            { "code": 2, "when": "usage error" },
+            { "code": 3, "when": "I/O error" },
+            { "code": 65, "when": "one or more payload concepts failed validation; file left untouched" }
+          ]
+        },
+        {
+          "name": "schema",
+          "kind": "utility",
+          "synopsis": "terminology schema [--command NAME]",
+          "description": "Dump the embedded schema.json describing the complete CLI surface. Without --command, dumps the full document. With --command, dumps just that command's entry.",
+          "args": [],
+          "flags": [
+            { "name": "--command", "type": "string", "description": "Restrict output to a single command's descriptor." }
+          ],
+          "output": { "description": "The schema document itself (this document)." },
+          "errors": ["validation_error"],
+          "exit_codes": [
+            { "code": 0, "when": "schema emitted" },
+            { "code": 65, "when": "--command names an unknown command" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"no_subcommand","message":"no subcommand specified","hint":"run 'terminology concept --help' for available subcommands"}}

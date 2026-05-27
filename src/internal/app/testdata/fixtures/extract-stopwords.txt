@@ -1,0 +1,17 @@
+# Spanish stopwords (sample)
+el
+la
+de
+en
+los
+del
+se
+es
+y
+un
+una
+que
+por
+con
+las
+al

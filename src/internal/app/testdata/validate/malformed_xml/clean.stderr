@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"validation_error","message":"TBX validation failed","hint":"check the TBX file structure and content"}}

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"file":"testdata/fixtures/scan-deprecated.md","matches":[{"concept_id":"tzimtzum","term":"contraction","lang":"en","status":"deprecated","line":1,"column":5,"context":"The contraction of the divine is a key concept."}],"summary":{"total_matches":1,"unique_concepts":1}}

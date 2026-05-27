@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"source":"testdata/fixtures/check-source.md","target":"testdata/fixtures/check-target-forbidden.md","violations":[{"type":"forbidden_variant","concept_id":"malkhut","variant":"malchut","line":7,"column":5,"context":"The malchut is the tenth sefira..."}],"warnings":[],"summary":{"violations":1,"warnings":0,"concepts_checked":2}}

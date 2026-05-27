@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en"
+     xmlns="urn:iso:std:iso:30042:ed-2"
+     xmlns:min="http://www.tbxinfo.net/ns/min"
+     xmlns:basic="http://www.tbxinfo.net/ns/basic"
+     xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc><p>Invalid picklist test fixture</p></sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text><body>
+    <conceptEntry id="c1">
+      <min:subjectField>test</min:subjectField>
+      <transacGrp>
+        <basic:transactionType>badtype</basic:transactionType>
+        <date>2026-05-20T10:00:00Z</date>
+      </transacGrp>
+      <langSec xml:lang="en">
+        <termSec>
+          <term>example</term>
+          <min:administrativeStatus>bogus</min:administrativeStatus>
+          <min:partOfSpeech>frobnicator</min:partOfSpeech>
+          <basic:grammaticalGender>unknown</basic:grammaticalGender>
+          <ling:grammaticalNumber>triple</ling:grammaticalNumber>
+          <ling:register>badregister</ling:register>
+          <basic:termType>badtype</basic:termType>
+        </termSec>
+      </langSec>
+    </conceptEntry>
+  </body></text>
+</tbx>

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"invalid_field","message":"unknown field path","hint":"see `terminology schema --command CMD` for valid paths"}}

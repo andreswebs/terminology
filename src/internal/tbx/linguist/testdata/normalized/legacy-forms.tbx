@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Legacy forms normalization fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="legacy-test">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>preferred</term>
+            <min:administrativeStatus>preferredTerm</min:administrativeStatus>
+          </termSec>
+          <termSec>
+            <term>admitted</term>
+            <min:administrativeStatus>admittedTerm</min:administrativeStatus>
+          </termSec>
+          <termSec>
+            <term>deprecated</term>
+            <min:administrativeStatus>deprecatedTerm</min:administrativeStatus>
+          </termSec>
+          <termSec>
+            <term>superseded</term>
+            <min:administrativeStatus>supersededTerm</min:administrativeStatus>
+          </termSec>
+          <termSec>
+            <term>with-usage-register</term>
+            <ling:register>usageRegister</ling:register>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"concepts":2,"languages":["en"],"warnings":[{"code":"duplicate_id","message":"concept ID \"c1\" already declared at index 0","concept_id":"c1","line":22,"column":29},{"code":"unresolved_crossref","message":"concept \"c1\" references unknown ID \"nonexistent\"","concept_id":"c1","line":12,"column":29}]}

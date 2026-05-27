@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"io_error","message":"reading nonexistent.md: open $CWD/nonexistent.md: no such file or directory"}}

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"invalid_path","message":"file path contains rejected characters or escapes the sandbox","hint":"paths must not contain .., percent-encoded segments, or query parameters"}}

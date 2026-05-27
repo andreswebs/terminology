@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"source":"testdata/fixtures/check-source.md","target":"testdata/fixtures/check-target-missing.md","violations":[{"type":"missing","concept_id":"malkhut","source_term":"malkhut","expected_target":"מלכות","source_occurrences":1}],"warnings":[],"summary":{"violations":1,"warnings":0,"concepts_checked":2}}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Crossref test fixture</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="tzimtzum">
+        <min:subjectField>kabbalah</min:subjectField>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>tzimtzum</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="sefirot">
+        <min:subjectField>kabbalah</min:subjectField>
+        <basic:crossReference target="tzimtzum">related concept</basic:crossReference>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>sefirot</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"input_too_large","message":"input exceeds maximum size","hint":"split the input into smaller files or batches"}}

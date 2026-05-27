@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"dangling_crossref","message":"write would leave dangling cross-references","hint":"remove or update cross-references before removing the target concept, or use --force"}}

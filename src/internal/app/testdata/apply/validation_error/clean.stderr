@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"apply_validation_failed","message":"1 concept(s) failed validation; no changes written","hint":"fix per-concept errors in failures[] and retry","details":{"failures":[{"concept_id":"new-concept","code":"unresolved_crossref","message":"concept \"new-concept\" references unknown ID \"nonexistent\""}]}}}

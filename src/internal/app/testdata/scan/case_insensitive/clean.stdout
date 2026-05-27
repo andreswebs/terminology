@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":true,"file":"testdata/fixtures/scan-uppercase.md","matches":[{"concept_id":"tzimtzum","term":"tzimtzum","lang":"en","status":"preferred","line":1,"column":16,"context":"The concept of TZIMTZUM is discussed in the Zohar."}],"summary":{"total_matches":1,"unique_concepts":1}}

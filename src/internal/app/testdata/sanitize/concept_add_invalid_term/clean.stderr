@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"invalid_term","message":"term contains rejected characters","hint":"terms must not contain control characters"}}
