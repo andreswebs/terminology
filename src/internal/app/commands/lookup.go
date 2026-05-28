@@ -2,8 +2,6 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/andreswebs/terminology/internal/output"
 	"github.com/andreswebs/terminology/internal/tbx"
@@ -58,33 +56,8 @@ func lookupAction(_ context.Context, cmd *urfcli.Command) error {
 		Results:       buildLookupResults(matches),
 	}
 
-	fieldsStr := cmd.String("fields")
-	if fieldsStr != "" {
-		fields, fErr := output.ValidateFields(fieldsStr, env)
-		if fErr != nil {
-			return fErr
-		}
-
-		data, mErr := json.Marshal(env)
-		if mErr != nil {
-			return fmt.Errorf("marshaling output: %w", mErr)
-		}
-
-		projected, pErr := output.ProjectFields(data, fields)
-		if pErr != nil {
-			return fmt.Errorf("projecting fields: %w", pErr)
-		}
-
-		if _, wErr := cmd.Root().Writer.Write(projected); wErr != nil {
-			return fmt.Errorf("writing output: %w", wErr)
-		}
-		if _, wErr := cmd.Root().Writer.Write([]byte("\n")); wErr != nil {
-			return fmt.Errorf("writing output: %w", wErr)
-		}
-	} else {
-		if emitErr := output.EmitJSON(cmd.Root().Writer, env); emitErr != nil {
-			return fmt.Errorf("writing output: %w", emitErr)
-		}
+	if err := output.EmitProjected(cmd.Root().Writer, env, cmd.String("fields")); err != nil {
+		return err
 	}
 
 	if len(matches) == 0 {
