@@ -3,7 +3,6 @@ package check
 import (
 	"sort"
 
-	"github.com/andreswebs/terminology/internal/markdown"
 	"github.com/andreswebs/terminology/internal/match"
 	"github.com/andreswebs/terminology/internal/output"
 	"github.com/andreswebs/terminology/internal/tbx"
@@ -18,17 +17,10 @@ type Result struct {
 func Check(g *tbx.Glossary, srcText, tgtText []byte,
 	srcLang, tgtLang string, contextSize int, strict bool) (*Result, error) {
 
-	srcMatcher, err := match.New(g, srcLang, match.PolicyFor(srcLang))
+	srcMatches, err := match.ScanText(g, srcText, srcLang, contextSize)
 	if err != nil {
 		return nil, err
 	}
-
-	var srcSpans []markdown.Span
-	for s := range markdown.Spans(srcText) {
-		srcSpans = append(srcSpans, s)
-	}
-
-	srcMatches := srcMatcher.Scan(srcText, srcSpans, contextSize)
 
 	type srcInfo struct {
 		count      int
@@ -51,17 +43,10 @@ func Check(g *tbx.Glossary, srcText, tgtText []byte,
 		return &Result{}, nil
 	}
 
-	tgtMatcher, err := match.New(g, tgtLang, match.PolicyFor(tgtLang))
+	tgtMatches, err := match.ScanText(g, tgtText, tgtLang, contextSize)
 	if err != nil {
 		return nil, err
 	}
-
-	var tgtSpans []markdown.Span
-	for s := range markdown.Spans(tgtText) {
-		tgtSpans = append(tgtSpans, s)
-	}
-
-	tgtMatches := tgtMatcher.Scan(tgtText, tgtSpans, contextSize)
 
 	tgtPreferred := make(map[string]int)
 	type posHit struct {

@@ -63,20 +63,11 @@ func scanAction(_ context.Context, cmd *urfcli.Command) error {
 	if lang == "" {
 		lang = cmd.String("lang")
 	}
-	policy := match.PolicyFor(lang)
 
-	matcher, err := match.New(g, lang, policy)
+	matches, err := match.ScanText(g, data, lang, int(cmd.Int("context")))
 	if err != nil {
 		return fmt.Errorf("building matcher: %w", err)
 	}
-
-	var spans []markdown.Span
-	for s := range markdown.Spans(data) {
-		spans = append(spans, s)
-	}
-
-	contextSize := cmd.Int("context")
-	matches := matcher.Scan(data, spans, int(contextSize))
 
 	scanMatches := make([]output.ScanMatch, 0, len(matches))
 	conceptSet := make(map[string]struct{})

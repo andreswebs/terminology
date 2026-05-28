@@ -65,6 +65,24 @@ func New(g *tbx.Glossary, lang string, policy Policy) (*Matcher, error) {
 	}, nil
 }
 
+// ScanText is the high-level entry point for a single scan: it builds a
+// matcher for lang over g, extracts the markdown spans from data, and scans
+// them, applying the language-specific policy. Callers needing the lower-level
+// pieces can use New and Matcher.Scan directly.
+func ScanText(g *tbx.Glossary, data []byte, lang string, contextSize int) ([]Match, error) {
+	matcher, err := New(g, lang, PolicyFor(lang))
+	if err != nil {
+		return nil, err
+	}
+
+	var spans []markdown.Span
+	for s := range markdown.Spans(data) {
+		spans = append(spans, s)
+	}
+
+	return matcher.Scan(data, spans, contextSize), nil
+}
+
 func (m *Matcher) Scan(text []byte, spans []markdown.Span, contextSize int) []Match {
 	if contextSize <= 0 {
 		contextSize = 80

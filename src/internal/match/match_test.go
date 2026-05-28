@@ -524,3 +524,38 @@ func TestScan_BoundaryRejection(t *testing.T) {
 		t.Errorf("got %d matches, want 0 ('art' inside 'earth' should be rejected)", len(matches))
 	}
 }
+
+func TestScanText_ExtractsSpansAndMatches(t *testing.T) {
+	g := glossary(concept("tzimtzum", map[string]tbx.LangSection{
+		"en": langSec("en", term("tzimtzum", tbx.StatusPreferred)),
+	}))
+
+	// Raw markdown: ScanText must strip the heading/emphasis syntax via
+	// span extraction before matching, which Matcher.Scan alone does not do.
+	doc := []byte("# Kabbalah\n\nThe concept of *tzimtzum* matters.\n")
+
+	matches, err := ScanText(g, doc, "", 80)
+	if err != nil {
+		t.Fatalf("ScanText: %v", err)
+	}
+
+	if len(matches) != 1 {
+		t.Fatalf("ScanText found %d matches, want 1", len(matches))
+	}
+	if matches[0].ConceptID != "tzimtzum" {
+		t.Errorf("ConceptID = %q, want %q", matches[0].ConceptID, "tzimtzum")
+	}
+	if matches[0].Status != "preferred" {
+		t.Errorf("Status = %q, want %q", matches[0].Status, "preferred")
+	}
+}
+
+func TestScanText_NoMatchesOnEmptyGlossary(t *testing.T) {
+	matches, err := ScanText(glossary(), []byte("any text here"), "", 80)
+	if err != nil {
+		t.Fatalf("ScanText: %v", err)
+	}
+	if len(matches) != 0 {
+		t.Errorf("ScanText found %d matches, want 0", len(matches))
+	}
+}
