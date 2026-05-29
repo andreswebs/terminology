@@ -77,26 +77,6 @@ func (fw *failWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func TestStatusString(t *testing.T) {
-	tests := []struct {
-		status tbx.Status
-		want   string
-	}{
-		{tbx.StatusPreferred, "preferredTerm-admn-sts"},
-		{tbx.StatusAdmitted, "admittedTerm-admn-sts"},
-		{tbx.StatusDeprecated, "deprecatedTerm-admn-sts"},
-		{tbx.StatusSuperseded, "supersededTerm-admn-sts"},
-		{tbx.StatusUnspecified, ""},
-	}
-
-	for _, tc := range tests {
-		got := statusString(tc.status)
-		if got != tc.want {
-			t.Errorf("statusString(%d) = %q, want %q", tc.status, got, tc.want)
-		}
-	}
-}
-
 func TestStatusOrder(t *testing.T) {
 	if statusOrder(tbx.StatusPreferred) >= statusOrder(tbx.StatusAdmitted) {
 		t.Error("preferred should sort before admitted")

@@ -117,7 +117,7 @@ func writeTermSec(b *xmlBuilder, term tbx.Term) {
 	b.line(`            <term>%s</term>`, xmlEscape(term.Surface))
 
 	if term.AdministrativeStatus != tbx.StatusUnspecified {
-		b.line(`            <min:administrativeStatus>%s</min:administrativeStatus>`, statusString(term.AdministrativeStatus))
+		b.line(`            <min:administrativeStatus>%s</min:administrativeStatus>`, term.AdministrativeStatus.String())
 	}
 	if term.PartOfSpeech != "" {
 		b.line(`            <min:partOfSpeech>%s</min:partOfSpeech>`, xmlEscape(term.PartOfSpeech))
@@ -198,21 +198,6 @@ func writeTransaction(b *xmlBuilder, tx tbx.Transaction, indent int) {
 		b.line(`%s  <basic:responsibility>%s</basic:responsibility>`, pad, xmlEscape(tx.Responsibility))
 	}
 	b.line(`%s</transacGrp>`, pad)
-}
-
-func statusString(s tbx.Status) string {
-	switch s {
-	case tbx.StatusPreferred:
-		return "preferredTerm-admn-sts"
-	case tbx.StatusAdmitted:
-		return "admittedTerm-admn-sts"
-	case tbx.StatusDeprecated:
-		return "deprecatedTerm-admn-sts"
-	case tbx.StatusSuperseded:
-		return "supersededTerm-admn-sts"
-	default:
-		return ""
-	}
 }
 
 func sortedConcepts(cs []tbx.Concept) []tbx.Concept {

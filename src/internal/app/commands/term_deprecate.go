@@ -54,17 +54,9 @@ func termDeprecateAction(ctx context.Context, cmd *urfcli.Command) error {
 	author := cmd.String("author")
 
 	mutator := func(g *tbx.Glossary) (*tbx.Concept, error) {
-		idx := -1
-		for i := range g.Concepts {
-			if g.Concepts[i].ID == targetID {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			return nil, write.ErrNotFound.Wrap(
-				fmt.Errorf("concept %q not found", targetID),
-			)
+		idx, err := write.ConceptIndex(g, targetID)
+		if err != nil {
+			return nil, err
 		}
 
 		existing := &g.Concepts[idx]

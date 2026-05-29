@@ -464,7 +464,7 @@ func decodeTermFields(dc *decodeCtx, se xml.StartElement, term *tbx.Term) ([]tbx
 		if err != nil {
 			return nil, err
 		}
-		term.AdministrativeStatus = normalizeStatus(text)
+		term.AdministrativeStatus = tbx.ParseStatus(text)
 		var warnings []tbx.Warning
 		if w := checkPicklist(text, "administrativeStatus", tbx.AdminStatus()); w != nil {
 			w.Line, w.Col = line, col

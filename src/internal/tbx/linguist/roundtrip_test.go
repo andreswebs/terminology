@@ -198,6 +198,62 @@ func TestRoundTrip_Stability(t *testing.T) {
 	}
 }
 
+// TestRoundTrip_CoversEveryTermField guards the term-field vocabulary that is
+// restated across reader (decode), dialect (DCT/DCA key maps), and writer
+// (canonical DCT emit). The round-trip suite only locks read<->write spelling
+// for fields a fixture actually contains, so a field added to tbx.Term but
+// missing from every fixture would round-trip silently as a no-op. This asserts
+// the canonical DCT fixtures collectively populate every Term field; a new
+// field fails here until a fixture exercises it, which then forces
+// TestRoundTrip_Canonical to lock its spelling across all three sites.
+func TestRoundTrip_CoversEveryTermField(t *testing.T) {
+	fixtures, err := filepath.Glob("testdata/canonical/*.tbx")
+	if err != nil {
+		t.Fatalf("glob: %v", err)
+	}
+
+	var terms []tbx.Term
+	for _, path := range fixtures {
+		// DCA fixtures decode to the same model but are not round-tripped by
+		// the writer (which emits canonical DCT), so mirror that scope here.
+		if strings.HasSuffix(path, "-dca.tbx") {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		g, _, err := NewReader().Decode(bytes.NewReader(data))
+		if err != nil {
+			t.Fatalf("decode %s: %v", path, err)
+		}
+		for _, c := range g.Concepts {
+			for _, ls := range c.Languages {
+				terms = append(terms, ls.Terms...)
+			}
+		}
+	}
+
+	if len(terms) == 0 {
+		t.Fatal("no terms found in canonical DCT fixtures")
+	}
+
+	termType := reflect.TypeOf(tbx.Term{})
+	for i := 0; i < termType.NumField(); i++ {
+		field := termType.Field(i)
+		covered := false
+		for j := range terms {
+			if !reflect.ValueOf(terms[j]).Field(i).IsZero() {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			t.Errorf("no canonical DCT fixture exercises Term.%s; add it to a fixture so the round-trip suite locks its reader/dialect/writer spelling", field.Name)
+		}
+	}
+}
+
 func TestRoundTrip_Canonical(t *testing.T) {
 	fixtures, err := filepath.Glob("testdata/canonical/*.tbx")
 	if err != nil {

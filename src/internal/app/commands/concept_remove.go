@@ -49,21 +49,13 @@ func conceptRemoveAction(ctx context.Context, cmd *urfcli.Command) error {
 		return err
 	}
 
-	idx := -1
-	for i := range g.Concepts {
-		if g.Concepts[i].ID == targetID {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return write.ErrNotFound.Wrap(
-			fmt.Errorf("concept %q not found", targetID),
-		)
+	idx, err := write.ConceptIndex(g, targetID)
+	if err != nil {
+		return err
 	}
 
 	if !force {
-		if refs := findCrossRefsTo(g, targetID); len(refs) > 0 {
+		if refs := write.CrossRefsTo(g, targetID); len(refs) > 0 {
 			return write.ErrDanglingCrossref.Wrap(
 				fmt.Errorf("concept(s) %s reference %q", strings.Join(refs, ", "), targetID),
 			)
@@ -96,35 +88,4 @@ func conceptRemoveAction(ctx context.Context, cmd *urfcli.Command) error {
 	}
 
 	return nil
-}
-
-func findCrossRefsTo(g *tbx.Glossary, targetID string) []string {
-	var refs []string
-	for _, c := range g.Concepts {
-		if c.ID == targetID {
-			continue
-		}
-		if conceptRefs(c, targetID) {
-			refs = append(refs, c.ID)
-		}
-	}
-	return refs
-}
-
-func conceptRefs(c tbx.Concept, targetID string) bool {
-	for _, cr := range c.CrossRefs {
-		if cr.Target == targetID {
-			return true
-		}
-	}
-	for _, ls := range c.Languages {
-		for _, t := range ls.Terms {
-			for _, cr := range t.CrossRefs {
-				if cr.Target == targetID {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }

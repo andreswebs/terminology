@@ -92,25 +92,17 @@ func conceptUpdateAction(ctx context.Context, cmd *urfcli.Command) error {
 	}
 
 	mutator := func(g *tbx.Glossary) (*tbx.Concept, error) {
-		idx := -1
-		for i := range g.Concepts {
-			if g.Concepts[i].ID == targetID {
-				idx = i
-				break
-			}
-		}
-		if idx == -1 {
-			return nil, write.ErrNotFound.Wrap(
-				fmt.Errorf("concept %q not found", targetID),
-			)
+		idx, err := write.ConceptIndex(g, targetID)
+		if err != nil {
+			return nil, err
 		}
 
 		existing := &g.Concepts[idx]
 
 		if mergeMode {
-			mergeConcept(existing, payload)
+			write.MergeConcept(existing, payload)
 		} else {
-			replaceConcept(existing, payload)
+			write.ReplaceConcept(existing, payload)
 		}
 
 		if wantTxn {
@@ -176,132 +168,4 @@ func parseUpdateFromFlags(cmd *urfcli.Command) (*tbx.Concept, error) {
 	}
 
 	return &c, nil
-}
-
-func replaceConcept(existing *tbx.Concept, payload *tbx.Concept) {
-	id := existing.ID
-	*existing = *payload
-	existing.ID = id
-}
-
-func mergeConcept(existing *tbx.Concept, payload *tbx.Concept) {
-	if payload.SubjectField != "" {
-		existing.SubjectField = payload.SubjectField
-	}
-	if len(payload.Definitions) > 0 {
-		existing.Definitions = payload.Definitions
-	}
-	if len(payload.CrossRefs) > 0 {
-		existing.CrossRefs = payload.CrossRefs
-	}
-	if len(payload.ExternalRefs) > 0 {
-		existing.ExternalRefs = payload.ExternalRefs
-	}
-	if len(payload.Graphics) > 0 {
-		existing.Graphics = payload.Graphics
-	}
-	if len(payload.Sources) > 0 {
-		existing.Sources = payload.Sources
-	}
-	if payload.CustomerSubset != "" {
-		existing.CustomerSubset = payload.CustomerSubset
-	}
-	if payload.ProjectSubset != "" {
-		existing.ProjectSubset = payload.ProjectSubset
-	}
-	if len(payload.Notes) > 0 {
-		existing.Notes = payload.Notes
-	}
-
-	if existing.Languages == nil {
-		existing.Languages = make(map[string]tbx.LangSection)
-	}
-
-	for lang, payloadLS := range payload.Languages {
-		existingLS, ok := existing.Languages[lang]
-		if !ok {
-			existing.Languages[lang] = payloadLS
-			continue
-		}
-		mergeLangSection(&existingLS, &payloadLS)
-		existing.Languages[lang] = existingLS
-	}
-}
-
-func mergeLangSection(existing *tbx.LangSection, payload *tbx.LangSection) {
-	if len(payload.Definitions) > 0 {
-		existing.Definitions = payload.Definitions
-	}
-	if len(payload.Sources) > 0 {
-		existing.Sources = payload.Sources
-	}
-
-	for _, pt := range payload.Terms {
-		merged := false
-		for i := range existing.Terms {
-			if existing.Terms[i].Surface == pt.Surface &&
-				existing.Terms[i].AdministrativeStatus == pt.AdministrativeStatus {
-				mergeTermFields(&existing.Terms[i], &pt)
-				merged = true
-				break
-			}
-		}
-		if !merged {
-			existing.Terms = append(existing.Terms, pt)
-		}
-	}
-}
-
-func mergeTermFields(existing *tbx.Term, payload *tbx.Term) {
-	if payload.PartOfSpeech != "" {
-		existing.PartOfSpeech = payload.PartOfSpeech
-	}
-	if payload.GrammaticalGender != "" {
-		existing.GrammaticalGender = payload.GrammaticalGender
-	}
-	if payload.GrammaticalNumber != "" {
-		existing.GrammaticalNumber = payload.GrammaticalNumber
-	}
-	if payload.Register != "" {
-		existing.Register = payload.Register
-	}
-	if payload.TermType != "" {
-		existing.TermType = payload.TermType
-	}
-	if payload.TermLocation != "" {
-		existing.TermLocation = payload.TermLocation
-	}
-	if payload.GeographicalUsage != "" {
-		existing.GeographicalUsage = payload.GeographicalUsage
-	}
-	if payload.TransferComment != "" {
-		existing.TransferComment = payload.TransferComment
-	}
-	if payload.Reading != "" {
-		existing.Reading = payload.Reading
-	}
-	if payload.ReadingNote != "" {
-		existing.ReadingNote = payload.ReadingNote
-	}
-	if payload.CustomerSubset != "" {
-		existing.CustomerSubset = payload.CustomerSubset
-	}
-	if payload.ProjectSubset != "" {
-		existing.ProjectSubset = payload.ProjectSubset
-	}
-	if len(payload.Contexts) > 0 {
-		existing.Contexts = payload.Contexts
-	}
-	if len(payload.Sources) > 0 {
-		existing.Sources = payload.Sources
-	}
-	if len(payload.ExternalRefs) > 0 {
-		existing.ExternalRefs = payload.ExternalRefs
-	}
-	if len(payload.CrossRefs) > 0 {
-		existing.CrossRefs = payload.CrossRefs
-	}
-	if len(payload.Notes) > 0 {
-		existing.Notes = payload.Notes
-	}
 }

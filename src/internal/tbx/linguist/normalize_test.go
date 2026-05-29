@@ -1,38 +1,11 @@
 package linguist
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/andreswebs/terminology/internal/tbx"
-)
-
-func TestNormalizeStatus(t *testing.T) {
-	cases := []struct {
-		input string
-		want  tbx.Status
-	}{
-		{"preferredTerm-admn-sts", tbx.StatusPreferred},
-		{"preferredTerm", tbx.StatusPreferred},
-		{"admittedTerm-admn-sts", tbx.StatusAdmitted},
-		{"admittedTerm", tbx.StatusAdmitted},
-		{"deprecatedTerm-admn-sts", tbx.StatusDeprecated},
-		{"deprecatedTerm", tbx.StatusDeprecated},
-		{"supersededTerm-admn-sts", tbx.StatusSuperseded},
-		{"supersededTerm", tbx.StatusSuperseded},
-		{"unknown", tbx.StatusUnspecified},
-		{"", tbx.StatusUnspecified},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.input, func(t *testing.T) {
-			got := normalizeStatus(tc.input)
-			if got != tc.want {
-				t.Errorf("normalizeStatus(%q) = %d, want %d", tc.input, got, tc.want)
-			}
-		})
-	}
-}
-
+// The Status string<->enum mapping is owned and tested by package tbx
+// (TestParseStatus, TestStatusString); the decoder calls tbx.ParseStatus
+// directly. Only the linguist-specific legacy register normalization is
+// tested here.
 func TestNormalizeRegister(t *testing.T) {
 	cases := []struct {
 		input, want string
