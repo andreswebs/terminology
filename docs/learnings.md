@@ -1,5 +1,10 @@
 # Learnings
 
+## BETA ter-z62o — preserve TBX header on round-trip
+
+- New canonical fixtures must be reachable by `TestRoundTrip_Canonical` (which globs `testdata/canonical/*.tbx` and asserts byte-exact read→write). Any new fixture immediately locks the writer's canonical output for its header shape, so the writer must emit empty header sections in the exact same order/whitespace the fixture uses.
+- For the convenience field `Glossary.SourceDesc` (legacy: first `<p>` text), the cleanest back-compat is to keep it but always derive it from `Header.SourceDescs[0]` on read. Writer prefers `Header.SourceDescs` when non-empty and falls back to wrapping `g.SourceDesc` — so test constructs using only `SourceDesc: "..."` still produce identical output.
+
 ## E1.T2 — internal/output
 
 - `AssertEnvelopeShape` conformance helper uses `t.Errorf` (not `t.Fatalf`) so that negative tests can pass a bare `*testing.T{}` without triggering `runtime.Goexit` panics.

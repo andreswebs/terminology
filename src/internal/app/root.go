@@ -24,6 +24,7 @@ func Root() *urfcli.Command {
 		Before:  beforeHook,
 		Action:  rootAction,
 		Commands: []*urfcli.Command{
+			commands.Init(),
 			commands.Validate(),
 			commands.Lookup(),
 			commands.Scan(),

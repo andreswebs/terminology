@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="es" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Glosario de cábala</title>
+      </titleStmt>
+      <sourceDesc>
+        <p>Glosario es/he para textos académicos</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="tzimtzum">
+        <min:subjectField>kabbalah</min:subjectField>
+        <langSec xml:lang="es">
+          <termSec>
+            <term>tzimtzum</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="he">
+          <termSec>
+            <term>צמצום</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

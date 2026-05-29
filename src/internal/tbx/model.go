@@ -3,8 +3,18 @@ package tbx
 type Glossary struct {
 	Dialect    Dialect
 	Style      Style
+	SourceLang string
+	Header     Header
 	SourceDesc string
 	Concepts   []Concept
+}
+
+type Header struct {
+	Title            string
+	PublicationStmts []string
+	SourceDescs      []string
+	EncodingDescs    []string
+	RevisionDescs    []string
 }
 
 type Concept struct {

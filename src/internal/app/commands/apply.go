@@ -85,7 +85,7 @@ func applyAction(ctx context.Context, cmd *urfcli.Command) error {
 	}
 	defer unlock()
 
-	g, _, err := tbx.Load(tbxPath)
+	g, err := loadTBXForWrite(tbxPath)
 	if err != nil {
 		return err
 	}

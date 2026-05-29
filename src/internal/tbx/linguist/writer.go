@@ -18,20 +18,14 @@ func NewWriter() *LinguistWriter {
 func (lw *LinguistWriter) Encode(w io.Writer, g *tbx.Glossary) error {
 	b := &xmlBuilder{w: w}
 
-	desc := g.SourceDesc
-	if desc == "" {
-		desc = "Terminology glossary"
+	lang := g.SourceLang
+	if lang == "" {
+		lang = "en"
 	}
 
 	b.line(`<?xml version="1.0" encoding="UTF-8"?>`)
-	b.line(`<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">`)
-	b.line(`  <tbxHeader>`)
-	b.line(`    <fileDesc>`)
-	b.line(`      <sourceDesc>`)
-	b.line(`        <p>%s</p>`, xmlEscape(desc))
-	b.line(`      </sourceDesc>`)
-	b.line(`    </fileDesc>`)
-	b.line(`  </tbxHeader>`)
+	b.line(`<tbx type="TBX-Linguist" style="dct" xml:lang="%s" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">`, xmlEscape(lang))
+	writeHeader(b, g)
 	b.line(`  <text>`)
 	b.line(`    <body>`)
 
@@ -45,6 +39,54 @@ func (lw *LinguistWriter) Encode(w io.Writer, g *tbx.Glossary) error {
 	b.line(`</tbx>`)
 
 	return b.err
+}
+
+func writeHeader(b *xmlBuilder, g *tbx.Glossary) {
+	h := g.Header
+	sourceDescs := h.SourceDescs
+	if len(sourceDescs) == 0 {
+		desc := g.SourceDesc
+		if desc == "" {
+			desc = "Terminology glossary"
+		}
+		sourceDescs = []string{desc}
+	}
+
+	b.line(`  <tbxHeader>`)
+	b.line(`    <fileDesc>`)
+	if h.Title != "" {
+		b.line(`      <titleStmt>`)
+		b.line(`        <title>%s</title>`, xmlEscape(h.Title))
+		b.line(`      </titleStmt>`)
+	}
+	if len(h.PublicationStmts) > 0 {
+		b.line(`      <publicationStmt>`)
+		for _, p := range h.PublicationStmts {
+			b.line(`        <p>%s</p>`, xmlEscape(p))
+		}
+		b.line(`      </publicationStmt>`)
+	}
+	b.line(`      <sourceDesc>`)
+	for _, p := range sourceDescs {
+		b.line(`        <p>%s</p>`, xmlEscape(p))
+	}
+	b.line(`      </sourceDesc>`)
+	if len(h.EncodingDescs) > 0 {
+		b.line(`      <encodingDesc>`)
+		for _, p := range h.EncodingDescs {
+			b.line(`        <p>%s</p>`, xmlEscape(p))
+		}
+		b.line(`      </encodingDesc>`)
+	}
+	if len(h.RevisionDescs) > 0 {
+		b.line(`      <revisionDesc>`)
+		for _, p := range h.RevisionDescs {
+			b.line(`        <p>%s</p>`, xmlEscape(p))
+		}
+		b.line(`      </revisionDesc>`)
+	}
+	b.line(`    </fileDesc>`)
+	b.line(`  </tbxHeader>`)
 }
 
 func writeConceptEntry(b *xmlBuilder, c tbx.Concept) {

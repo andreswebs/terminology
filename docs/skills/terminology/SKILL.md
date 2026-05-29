@@ -61,6 +61,44 @@ Capture pattern: `terminology ... 2>err.json` — stdout has results, stderr has
 
 ## Commands
 
+### init
+
+Create a minimal valid TBX-Linguist skeleton at the target path.
+
+```sh
+terminology init --tbx glossary.tbx --source-lang en --title "Project glossary"
+terminology init --tbx glossary.tbx --source-lang en --dry-run   # render to stdout
+```
+
+- Required: `--source-lang` (BCP 47 tag, becomes the root `xml:lang`)
+- Refuses to overwrite an existing file (exit 3, `io_error`)
+- `--dry-run` renders the skeleton without writing
+
+The skeleton is the canonical empty glossary — bootstrap with this before
+calling any write command. Shape:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en"
+     xmlns="urn:iso:std:iso:30042:ed-2"
+     xmlns:min="http://www.tbxinfo.net/ns/min"
+     xmlns:basic="http://www.tbxinfo.net/ns/basic"
+     xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <titleStmt><title>Project glossary</title></titleStmt>
+      <sourceDesc><p>Terminology glossary</p></sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+    </body>
+  </text>
+</tbx>
+```
+
+`<titleStmt>` is omitted when `--title` is not supplied.
+
 ### validate
 
 Validate a TBX-Linguist glossary.
@@ -154,9 +192,18 @@ Manage glossary concepts.
 # Add via flags
 terminology concept add --tbx glossary.tbx --lang en --term "algorithm" --subject-field "CS"
 
-# Add via JSON stdin
-echo '{"concept_id":"algorithm","languages":{"en":{"preferred":{"term":"algorithm"}}}}' \
-  | terminology concept add --tbx glossary.tbx
+# Add via JSON stdin (preferred + admitted + deprecated + superseded variants)
+echo '{
+  "concept_id": "algorithm",
+  "languages": {
+    "en": {
+      "preferred":  { "term": "algorithm",  "administrative_status": "preferredTerm-admn-sts" },
+      "admitted":   [{ "term": "algo",      "administrative_status": "admittedTerm-admn-sts" }],
+      "deprecated": [{ "term": "recipe",    "administrative_status": "deprecatedTerm-admn-sts" }],
+      "superseded": [{ "term": "procedure", "administrative_status": "supersededTerm-admn-sts" }]
+    }
+  }
+}' | terminology concept add --tbx glossary.tbx
 
 # Update (exactly one of --merge or --replace required)
 terminology concept update algorithm --merge --tbx glossary.tbx --lang he --term "אלגוריתם"

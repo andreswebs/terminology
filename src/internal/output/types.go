@@ -14,6 +14,7 @@ func init() {
 	RegisterEnvelope("term add", WriteEnvelope{})
 	RegisterEnvelope("term deprecate", WriteEnvelope{})
 	RegisterEnvelope("apply", ApplyEnvelope{})
+	RegisterEnvelope("init", InitEnvelope{})
 
 	RegisterExitCodes("validate", []int{0, 1, 2, 3, 65})
 	RegisterExitCodes("lookup", []int{0, 1, 2, 3, 65})
@@ -27,6 +28,7 @@ func init() {
 	RegisterExitCodes("term add", []int{0, 2, 3, 65})
 	RegisterExitCodes("term deprecate", []int{0, 2, 3, 65})
 	RegisterExitCodes("apply", []int{0, 1, 2, 3, 65})
+	RegisterExitCodes("init", []int{0, 2, 3, 65})
 }
 
 type ValidateEnvelope struct {
@@ -272,6 +274,14 @@ func (e ApplyEnvelope) MarshalJSON() ([]byte, error) {
 		a.Warnings = []string{}
 	}
 	return json.Marshal(a)
+}
+
+type InitEnvelope struct {
+	SchemaVersion int    `json:"schema_version"`
+	OK            bool   `json:"ok"`
+	SourceLang    string `json:"source_lang"`
+	Title         string `json:"title,omitempty"`
+	DryRun        bool   `json:"dry_run,omitempty"`
 }
 
 func (e CheckEnvelope) MarshalJSON() ([]byte, error) {

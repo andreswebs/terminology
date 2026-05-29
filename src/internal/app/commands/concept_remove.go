@@ -44,7 +44,7 @@ func conceptRemoveAction(ctx context.Context, cmd *urfcli.Command) error {
 	wantTxn := cmd.Bool("transaction")
 	author := cmd.String("author")
 
-	g, _, err := tbx.Load(tbxPath)
+	g, err := loadTBXForWrite(tbxPath)
 	if err != nil {
 		return err
 	}

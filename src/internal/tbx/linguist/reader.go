@@ -102,7 +102,8 @@ func (lr *LinguistReader) Decode(r io.Reader) (*tbx.Glossary, []tbx.Warning, err
 	}
 
 	var style tbx.Style
-	var sourceDesc string
+	var sourceLang string
+	var header tbx.Header
 	var warnings []tbx.Warning
 	var concepts []tbx.Concept
 	var inBody bool
@@ -125,14 +126,13 @@ func (lr *LinguistReader) Decode(r io.Reader) (*tbx.Glossary, []tbx.Warning, err
 		case se.Name.Local == "tbx":
 			style = detectStyle(se)
 			dc.d = dialectFor(style)
-		case se.Name.Local == "p":
-			text, err := readCharData(dc, se)
+			sourceLang = detectRootLang(se)
+		case se.Name.Local == "tbxHeader":
+			h, err := decodeTBXHeader(dc, se)
 			if err != nil {
 				return nil, nil, err
 			}
-			if sourceDesc == "" {
-				sourceDesc = text
-			}
+			header = h
 		case se.Name.Local == "body":
 			inBody = true
 		case inBody && se.Name.Local == "conceptEntry":
@@ -151,14 +151,164 @@ func (lr *LinguistReader) Decode(r io.Reader) (*tbx.Glossary, []tbx.Warning, err
 		return nil, nil, fmt.Errorf("missing required <text><body> structure")
 	}
 
+	sourceDesc := ""
+	if len(header.SourceDescs) > 0 {
+		sourceDesc = header.SourceDescs[0]
+	}
+
 	g := &tbx.Glossary{
 		Dialect:    tbx.DialectLinguist,
 		Style:      style,
+		SourceLang: sourceLang,
+		Header:     header,
 		SourceDesc: sourceDesc,
 		Concepts:   concepts,
 	}
 
 	return g, warnings, nil
+}
+
+func detectRootLang(se xml.StartElement) string {
+	for _, a := range se.Attr {
+		if a.Name.Local == "lang" {
+			return a.Value
+		}
+	}
+	return ""
+}
+
+func decodeTBXHeader(dc *decodeCtx, start xml.StartElement) (tbx.Header, error) {
+	var h tbx.Header
+	for {
+		tok, err := dc.token()
+		if err != nil {
+			return h, fmt.Errorf("reading tbxHeader: %w", err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "fileDesc" {
+				if err := decodeFileDesc(dc, t, &h); err != nil {
+					return h, err
+				}
+				continue
+			}
+			if err := dc.skip(); err != nil {
+				return h, err
+			}
+		case xml.EndElement:
+			if t.Name.Local == start.Name.Local {
+				return h, nil
+			}
+		}
+	}
+}
+
+func decodeFileDesc(dc *decodeCtx, start xml.StartElement, h *tbx.Header) error {
+	for {
+		tok, err := dc.token()
+		if err != nil {
+			return fmt.Errorf("reading fileDesc: %w", err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "titleStmt":
+				title, err := decodeTitleStmt(dc, t)
+				if err != nil {
+					return err
+				}
+				h.Title = title
+			case "publicationStmt":
+				ps, err := collectParagraphs(dc, t)
+				if err != nil {
+					return err
+				}
+				h.PublicationStmts = append(h.PublicationStmts, ps...)
+			case "sourceDesc":
+				ps, err := collectParagraphs(dc, t)
+				if err != nil {
+					return err
+				}
+				h.SourceDescs = append(h.SourceDescs, ps...)
+			case "encodingDesc":
+				ps, err := collectParagraphs(dc, t)
+				if err != nil {
+					return err
+				}
+				h.EncodingDescs = append(h.EncodingDescs, ps...)
+			case "revisionDesc":
+				ps, err := collectParagraphs(dc, t)
+				if err != nil {
+					return err
+				}
+				h.RevisionDescs = append(h.RevisionDescs, ps...)
+			default:
+				if err := dc.skip(); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			if t.Name.Local == start.Name.Local {
+				return nil
+			}
+		}
+	}
+}
+
+func decodeTitleStmt(dc *decodeCtx, start xml.StartElement) (string, error) {
+	var title string
+	for {
+		tok, err := dc.token()
+		if err != nil {
+			return title, fmt.Errorf("reading titleStmt: %w", err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "title" {
+				text, err := readCharData(dc, t)
+				if err != nil {
+					return title, err
+				}
+				title = text
+				continue
+			}
+			if err := dc.skip(); err != nil {
+				return title, err
+			}
+		case xml.EndElement:
+			if t.Name.Local == start.Name.Local {
+				return title, nil
+			}
+		}
+	}
+}
+
+func collectParagraphs(dc *decodeCtx, start xml.StartElement) ([]string, error) {
+	var paras []string
+	for {
+		tok, err := dc.token()
+		if err != nil {
+			return paras, fmt.Errorf("reading %s: %w", start.Name.Local, err)
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "p" {
+				text, err := readCharData(dc, t)
+				if err != nil {
+					return paras, err
+				}
+				paras = append(paras, text)
+				continue
+			}
+			if err := dc.skip(); err != nil {
+				return paras, err
+			}
+		case xml.EndElement:
+			if t.Name.Local == start.Name.Local {
+				return paras, nil
+			}
+		}
+	}
 }
 
 func detectStyle(se xml.StartElement) tbx.Style {

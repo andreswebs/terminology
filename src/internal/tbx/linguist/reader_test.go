@@ -22,6 +22,23 @@ func TestDecode_MinimalDCT(t *testing.T) {
 	assertMinimalConcept(t, g)
 }
 
+func TestDecode_HeaderPreservation(t *testing.T) {
+	g := decodeFixture(t, "testdata/canonical/header-es-he.tbx")
+
+	if g.SourceLang != "es" {
+		t.Errorf("SourceLang = %q, want %q", g.SourceLang, "es")
+	}
+	if g.Header.Title != "Glosario de cábala" {
+		t.Errorf("Header.Title = %q, want %q", g.Header.Title, "Glosario de cábala")
+	}
+	if len(g.Header.SourceDescs) != 1 || g.Header.SourceDescs[0] != "Glosario es/he para textos académicos" {
+		t.Errorf("Header.SourceDescs = %v, want one paragraph", g.Header.SourceDescs)
+	}
+	if g.SourceDesc != "Glosario es/he para textos académicos" {
+		t.Errorf("SourceDesc = %q, want first paragraph", g.SourceDesc)
+	}
+}
+
 func TestDecode_MinimalDCA(t *testing.T) {
 	g := decodeFixture(t, "testdata/canonical/minimal-dca.tbx")
 

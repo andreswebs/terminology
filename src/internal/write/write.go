@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 
 	"github.com/andreswebs/terminology/internal/output"
 	"github.com/andreswebs/terminology/internal/tbx"
+	"github.com/andreswebs/terminology/internal/terr"
 )
 
 type Mutator func(g *tbx.Glossary) (*tbx.Concept, error)
@@ -23,6 +26,9 @@ var fatalWarningCodes = map[string]bool{
 func Execute(path string, mutate Mutator, dryRun bool) (*tbx.Concept, error) {
 	g, _, err := tbx.Load(path)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, terr.Newf("io_error", 3, "", "%s", err)
+		}
 		return nil, err
 	}
 

@@ -37,8 +37,28 @@ Available term-level flags:
     "en": {
       "preferred": {
         "term": "algorithm",
-        "administrative_status": "preferredTerm-admn-sts"
-      }
+        "administrative_status": "preferredTerm-admn-sts",
+        "part_of_speech": "noun"
+      },
+      "admitted": [
+        {
+          "term": "algo",
+          "administrative_status": "admittedTerm-admn-sts",
+          "register": "colloquialRegister"
+        }
+      ],
+      "deprecated": [
+        {
+          "term": "recipe",
+          "administrative_status": "deprecatedTerm-admn-sts"
+        }
+      ],
+      "superseded": [
+        {
+          "term": "procedure",
+          "administrative_status": "supersededTerm-admn-sts"
+        }
+      ]
     },
     "he": {
       "preferred": {
@@ -49,6 +69,20 @@ Available term-level flags:
   }
 }
 ```
+
+Each language section uses the four term-group keys defined in
+`internal/output.WriteTermGroup`:
+
+| Key          | Shape           | Meaning                                                                                              |
+| ------------ | --------------- | ---------------------------------------------------------------------------------------------------- |
+| `preferred`  | object or null  | The single preferred term (`preferredTerm-admn-sts`). At most one per language section.              |
+| `admitted`   | array of object | Tolerated variants (`admittedTerm-admn-sts`); satisfy `check` but warn (or fail under `--strict`).   |
+| `deprecated` | array of object | Forbidden variants (`deprecatedTerm-admn-sts`); flagged as `forbidden_variant` by `check`.           |
+| `superseded` | array of object | Historical variants (`supersededTerm-admn-sts`); treated like `deprecated` for verification.         |
+
+All four keys are optional and omitted (not null) when empty. Term objects
+follow the same shape across all four groups — only the
+`administrative_status` value differs.
 
 Pipe to the command: `echo '...' | terminology concept add --tbx glossary.tbx`
 
@@ -207,7 +241,16 @@ Idempotent: running the same payload twice produces all `unchanged` on the secon
           "preferred": {
             "term": "algorithm",
             "administrative_status": "preferredTerm-admn-sts"
-          }
+          },
+          "admitted": [
+            { "term": "algo", "administrative_status": "admittedTerm-admn-sts" }
+          ],
+          "deprecated": [
+            { "term": "recipe", "administrative_status": "deprecatedTerm-admn-sts" }
+          ],
+          "superseded": [
+            { "term": "procedure", "administrative_status": "supersededTerm-admn-sts" }
+          ]
         }
       }
     }
