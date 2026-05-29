@@ -65,7 +65,7 @@ func runGoldenCtx(t *testing.T, name string, argv []string, ctx context.Context)
 
 func writeGolden(t *testing.T, path string, data []byte) {
 	t.Helper()
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, normGolden(data), 0o644); err != nil {
 		t.Fatalf("write golden %s: %v", path, err)
 	}
 }

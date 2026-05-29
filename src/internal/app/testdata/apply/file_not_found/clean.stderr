@@ -1,1 +1,1 @@
-{"schema_version":1,"ok":false,"error":{"code":"io_error","message":"reading payload file: open /workspace/src/internal/app/testdata/nonexistent-payload.json: no such file or directory"}}
+{"schema_version":1,"ok":false,"error":{"code":"io_error","message":"reading payload file: open $CWD/testdata/nonexistent-payload.json: no such file or directory"}}
