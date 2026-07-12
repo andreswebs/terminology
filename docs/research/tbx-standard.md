@@ -1,3 +1,10 @@
+---
+type: Explanation
+title: "TermBase eXchange (TBX) Standard"
+description: "History, conceptual model, modular architecture, governance, criticisms, and continued relevance of the TBX terminology exchange standard."
+tags: [diataxis:explanation]
+---
+
 # TermBase eXchange (TBX) Standard
 
 The TermBase eXchange (TBX) standard is an international standard for the representation and interchange of terminological data. This document covers its history, its conceptual commitments, its modular architecture, its governance, its limitations, and what its persistence (or fragility) says about the field of terminology management.

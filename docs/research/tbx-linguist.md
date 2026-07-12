@@ -1,3 +1,10 @@
+---
+type: Reference
+title: "TBX-Linguist"
+description: "Reference for the TBX-Linguist dialect covering its identity, the five added data categories, inherited categories, validation toolchain, and an implementation checklist."
+tags: [diataxis:reference]
+---
+
 # TBX-Linguist
 
 ## Overview
