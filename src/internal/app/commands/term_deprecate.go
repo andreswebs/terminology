@@ -10,6 +10,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// TermDeprecate constructs the "term deprecate" command, which sets an existing
+// term's administrativeStatus to deprecatedTerm-admn-sts.
 func TermDeprecate() *urfcli.Command {
 	flags := []urfcli.Flag{
 		langFlag(true, "language tag"),

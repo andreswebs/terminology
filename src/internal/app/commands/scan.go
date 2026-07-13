@@ -13,6 +13,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Scan constructs the "scan" command, which finds all glossary term
+// occurrences in a markdown file.
 func Scan() *urfcli.Command {
 	return &urfcli.Command{
 		Name:      "scan",

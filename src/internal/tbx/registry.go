@@ -5,6 +5,7 @@ var (
 	writers = map[Dialect]func() Writer{}
 )
 
+// RegisterDialect registers the reader and writer constructors for dialect d.
 func RegisterDialect(d Dialect, rf func() Reader, wf func() Writer) {
 	readers[d] = rf
 	writers[d] = wf
@@ -18,10 +19,14 @@ func readerFor(d Dialect) (Reader, error) {
 	return rf(), nil
 }
 
+// ReaderForDialect returns a Reader for dialect d, or ErrUnsupportedDialect if
+// none is registered.
 func ReaderForDialect(d Dialect) (Reader, error) {
 	return readerFor(d)
 }
 
+// WriterForDialect returns a Writer for dialect d, or ErrUnsupportedDialect if
+// none is registered.
 func WriterForDialect(d Dialect) (Writer, error) {
 	return writerFor(d)
 }

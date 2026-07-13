@@ -9,6 +9,8 @@ import (
 	"github.com/andreswebs/terminology/internal/tbx"
 )
 
+// ReconcileResult reports the concept IDs added, updated, removed, and left
+// unchanged by a reconcile operation.
 type ReconcileResult struct {
 	Added     []string
 	Updated   []string
@@ -16,10 +18,15 @@ type ReconcileResult struct {
 	Unchanged []string
 }
 
+// Reconcile merges payload concepts into the glossary, adding, updating, and
+// (when prune is set) removing concepts to match, without recording
+// transactions.
 func Reconcile(g *tbx.Glossary, payload []tbx.Concept, prune bool) (*ReconcileResult, error) {
 	return reconcile(g, payload, prune, nil)
 }
 
+// ReconcileWithTxn behaves like Reconcile but records a transaction attributed
+// to author on each added or updated concept.
 func ReconcileWithTxn(ctx context.Context, g *tbx.Glossary, payload []tbx.Concept, prune bool, author string) (*ReconcileResult, error) {
 	txnInfo := &txnConfig{ctx: ctx, author: author}
 	return reconcile(g, payload, prune, txnInfo)

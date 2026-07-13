@@ -1,9 +1,14 @@
+// Package version reports the build version of the tool.
 package version
 
 import "runtime/debug"
 
+// Override forces Current to return this value instead of the version derived
+// from build info when it is non-empty.
 var Override = ""
 
+// Current returns the tool's version: Override if set, otherwise the module
+// version from build info, falling back to "dev".
 func Current() string {
 	if Override != "" {
 		return Override

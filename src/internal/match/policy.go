@@ -3,6 +3,7 @@ package match
 // Form selects the Unicode normalization form applied during canonical normalization.
 type Form int
 
+// Normalization forms selectable by a Policy.
 const (
 	NFC Form = iota
 	NFKD

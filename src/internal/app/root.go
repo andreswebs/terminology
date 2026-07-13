@@ -8,6 +8,7 @@ import (
 	"github.com/andreswebs/terminology/internal/app/commands"
 	"github.com/andreswebs/terminology/internal/logctx"
 	"github.com/andreswebs/terminology/internal/tbx"
+	// Registers the TBX-Linguist dialect with the tbx registry via its init.
 	_ "github.com/andreswebs/terminology/internal/tbx/linguist"
 	"github.com/andreswebs/terminology/internal/terr"
 	"github.com/andreswebs/terminology/internal/version"
@@ -15,6 +16,8 @@ import (
 	"golang.org/x/term"
 )
 
+// Root constructs the top-level terminology CLI command, including its global
+// flags and all registered subcommands.
 func Root() *urfcli.Command {
 	return &urfcli.Command{
 		Name:    "terminology",

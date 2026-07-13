@@ -9,13 +9,16 @@ import (
 	"github.com/andreswebs/terminology/internal/tbx"
 )
 
-type LinguistWriter struct{}
+// Writer encodes glossaries into the TBX-Linguist XML format.
+type Writer struct{}
 
-func NewWriter() *LinguistWriter {
-	return &LinguistWriter{}
+// NewWriter returns a Writer.
+func NewWriter() *Writer {
+	return &Writer{}
 }
 
-func (lw *LinguistWriter) Encode(w io.Writer, g *tbx.Glossary) error {
+// Encode writes g to w as a TBX-Linguist XML document.
+func (lw *Writer) Encode(w io.Writer, g *tbx.Glossary) error {
 	b := &xmlBuilder{w: w}
 
 	lang := g.SourceLang

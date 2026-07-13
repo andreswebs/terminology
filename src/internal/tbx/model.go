@@ -1,5 +1,7 @@
 package tbx
 
+// Glossary is an in-memory representation of a TBX terminology collection,
+// including its dialect, style, header metadata, and concepts.
 type Glossary struct {
 	Dialect    Dialect
 	Style      Style
@@ -9,6 +11,8 @@ type Glossary struct {
 	Concepts   []Concept
 }
 
+// Header holds the descriptive metadata of a glossary drawn from the TBX
+// header section.
 type Header struct {
 	Title            string
 	PublicationStmts []string
@@ -17,6 +21,8 @@ type Header struct {
 	RevisionDescs    []string
 }
 
+// Concept is a single terminological entry, grouping its language sections
+// and shared metadata under one concept ID.
 type Concept struct {
 	ID             string
 	StartLine      int
@@ -34,6 +40,8 @@ type Concept struct {
 	Languages      map[string]LangSection
 }
 
+// LangSection holds the terms and language-level metadata for one language
+// within a concept.
 type LangSection struct {
 	Lang        string
 	StartLine   int
@@ -43,6 +51,8 @@ type LangSection struct {
 	Terms       []Term
 }
 
+// Term is a single term within a language section, carrying its surface form
+// and associated linguistic and administrative attributes.
 type Term struct {
 	Surface              string
 	AdministrativeStatus Status
@@ -66,8 +76,11 @@ type Term struct {
 	Notes                []string
 }
 
+// Status is the administrative status of a term.
 type Status int
 
+// StatusUnspecified and the following values enumerate the administrative
+// statuses a term may carry.
 const (
 	StatusUnspecified Status = iota
 	StatusPreferred
@@ -91,6 +104,8 @@ func (s Status) String() string {
 	}
 }
 
+// ParseStatus converts a TBX administrative status string into a Status,
+// returning StatusUnspecified for unrecognized values.
 func ParseStatus(s string) Status {
 	switch s {
 	case "preferredTerm-admn-sts", "preferredTerm":
@@ -106,17 +121,22 @@ func ParseStatus(s string) Status {
 	}
 }
 
+// CrossRef is a reference from a concept or term to another concept.
 type CrossRef struct {
 	Target string
 	Label  string
 }
 
+// Transaction records a change event, such as origination or modification,
+// with its date and responsible party.
 type Transaction struct {
 	Type           string
 	Date           string
 	Responsibility string
 }
 
+// NoteText is a piece of descriptive text held both as plain text and in its
+// original raw form.
 type NoteText struct {
 	Plain string
 	Raw   string

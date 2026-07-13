@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// ValidateFields parses a comma-separated list of field paths and verifies each
+// against the JSON paths available on envelope, returning the cleaned list or an
+// ErrInvalidField error naming the offending path and the valid ones.
 func ValidateFields(paths string, envelope any) ([]string, error) {
 	paths = strings.TrimSpace(paths)
 	if paths == "" {
@@ -32,6 +35,8 @@ func ValidateFields(paths string, envelope any) ([]string, error) {
 	return fields, nil
 }
 
+// ProjectFields reduces the marshaled JSON in data to the requested field paths,
+// always retaining schema_version and ok, and returns the re-marshaled result.
 func ProjectFields(data []byte, fields []string) ([]byte, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err != nil {

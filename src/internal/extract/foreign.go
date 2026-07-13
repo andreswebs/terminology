@@ -7,6 +7,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// Options configures the extraction heuristics: the target script filter, the
+// base language, the minimum frequency threshold, and the stopword set.
 type Options struct {
 	Script    string
 	BaseLang  string
@@ -31,6 +33,9 @@ func langToScript(lang string) *unicode.RangeTable {
 	}
 }
 
+// ForeignScriptTokens returns candidates for tokens written in a script other
+// than the dominant one of their span, honoring the script filter and base
+// language in opts.
 func ForeignScriptTokens(spans []Span, opts Options) []Candidate {
 	var scriptFilter *unicode.RangeTable
 	if opts.Script != "" && opts.Script != "any" {

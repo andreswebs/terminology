@@ -35,6 +35,8 @@ func requireMergeXorReplace(ctx context.Context, cmd *urfcli.Command) (context.C
 	return ctx, nil
 }
 
+// ConceptUpdate constructs the "concept update" command, which merges into or
+// replaces the content of an existing concept entry.
 func ConceptUpdate() *urfcli.Command {
 	flags := []urfcli.Flag{
 		&urfcli.BoolFlag{Name: "merge", Usage: "merge supplied fields with existing (preserve unspecified)"},

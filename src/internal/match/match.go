@@ -14,6 +14,8 @@ type termPattern struct {
 	Status    string
 }
 
+// Match is a single glossary term occurrence found in scanned text, including
+// its concept, language, status, position, and surrounding context.
 type Match struct {
 	ConceptID string
 	Term      string
@@ -24,12 +26,17 @@ type Match struct {
 	Context   string
 }
 
+// Matcher scans text for glossary terms using a prebuilt automaton and the
+// normalization policy the terms were compiled under.
 type Matcher struct {
 	policy   Policy
 	machine  *automaton
 	patterns []termPattern
 }
 
+// New builds a Matcher for the terms in g. When lang is non-empty only that
+// language's terms are included; otherwise all languages are used and their
+// per-language policies are merged. The policy argument sets the base policy.
 func New(g *tbx.Glossary, lang string, policy Policy) (*Matcher, error) {
 	var patterns []termPattern
 	var canonical [][]byte
@@ -83,7 +90,10 @@ func ScanText(g *tbx.Glossary, data []byte, lang string, contextSize int) ([]Mat
 	return matcher.Scan(data, spans, contextSize), nil
 }
 
-func (m *Matcher) Scan(text []byte, spans []markdown.Span, contextSize int) []Match {
+// Scan searches the given spans for glossary term matches, returning one Match
+// per valid occurrence with contextSize bytes of surrounding context (defaulting
+// to 80 when not positive).
+func (m *Matcher) Scan(_ []byte, spans []markdown.Span, contextSize int) []Match {
 	if contextSize <= 0 {
 		contextSize = 80
 	}

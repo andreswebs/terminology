@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// CheckDoctype rejects TBX input whose DOCTYPE declaration contains an
+// internal subset or an external ID, returning ErrDangerousDoctype if found.
 func CheckDoctype(data []byte) error {
 	upper := bytes.ToUpper(data)
 	_, after, ok := bytes.Cut(upper, []byte("<!DOCTYPE"))

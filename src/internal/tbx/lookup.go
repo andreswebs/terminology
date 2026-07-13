@@ -5,12 +5,17 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// LookupMatch is a term found by Lookup, identifying the concept, the language
+// it belongs to, and the term's original surface form.
 type LookupMatch struct {
 	Concept     Concept
 	TermLang    string
 	TermSurface string
 }
 
+// Lookup returns the matches for term across the glossary, comparing
+// case-insensitively on NFC-normalized surface forms. An empty lang matches any
+// language; an empty term returns no matches.
 func (g *Glossary) Lookup(term, lang string) []LookupMatch {
 	results := []LookupMatch{}
 

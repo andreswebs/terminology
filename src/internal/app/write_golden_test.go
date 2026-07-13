@@ -85,11 +85,11 @@ func TestConceptAdd_DuplicateID_Golden(t *testing.T) {
 
 func TestConceptAdd_Transaction_Golden(t *testing.T) {
 	tbx := copyFixture(t, "minimal-dct.tbx")
-	runGoldenCtx(t, "concept_add/transaction", []string{
+	runGoldenCtx(writeCtx(), t, "concept_add/transaction", []string{
 		"terminology", "--tbx", tbx, "concept", "add",
 		"--lang", "en", "--term", "sefirot",
 		"--transaction", "--author", "test-author",
-	}, writeCtx())
+	})
 }
 
 func TestConceptAdd_JSONStdin_Golden(t *testing.T) {

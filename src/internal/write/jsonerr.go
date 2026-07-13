@@ -40,9 +40,15 @@ type InvalidInputError struct {
 }
 
 func (e *InvalidInputError) Error() string { return e.msg }
-func (e *InvalidInputError) Code() string  { return ErrInvalidInput.Code() }
+
+// Code returns the error code shared with ErrInvalidInput.
+func (e *InvalidInputError) Code() string { return ErrInvalidInput.Code() }
+
+// ExitCode returns the process exit code shared with ErrInvalidInput.
 func (e *InvalidInputError) ExitCode() int { return ErrInvalidInput.ExitCode() }
-func (e *InvalidInputError) Hint() string  { return ErrInvalidInput.Hint() }
+
+// Hint returns the remediation hint shared with ErrInvalidInput.
+func (e *InvalidInputError) Hint() string { return ErrInvalidInput.Hint() }
 
 // Unwrap returns the ErrInvalidInput sentinel so errors.Is classification and
 // exit-code extraction keep working against the shared sentinel identity.

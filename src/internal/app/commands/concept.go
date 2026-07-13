@@ -13,6 +13,8 @@ var errNoConceptSubcommand = terr.New(
 	"no subcommand specified",
 )
 
+// Concept constructs the "concept" command, which groups the subcommands for
+// creating, updating, and removing concept entries.
 func Concept() *urfcli.Command {
 	return &urfcli.Command{
 		Name:  "concept",

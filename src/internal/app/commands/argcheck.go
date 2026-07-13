@@ -8,29 +8,29 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
-func argBounds(min, max int) urfcli.BeforeFunc {
+func argBounds(minArgs, maxArgs int) urfcli.BeforeFunc {
 	return func(ctx context.Context, cmd *urfcli.Command) (context.Context, error) {
 		n := cmd.Args().Len()
-		if n < min {
+		if n < minArgs {
 			noun := "argument"
-			if min > 1 {
+			if minArgs > 1 {
 				noun = "arguments"
 			}
 			return ctx, terr.Newf(
 				"missing_argument", 2,
 				fmt.Sprintf("see '%s --help'", cmd.FullName()),
-				"%s requires %d %s, got %d", cmd.FullName(), min, noun, n,
+				"%s requires %d %s, got %d", cmd.FullName(), minArgs, noun, n,
 			)
 		}
-		if max >= 0 && n > max {
+		if maxArgs >= 0 && n > maxArgs {
 			noun := "argument"
-			if max != 1 {
+			if maxArgs != 1 {
 				noun = "arguments"
 			}
 			return ctx, terr.Newf(
 				"excess_arguments", 2,
 				fmt.Sprintf("see '%s --help'", cmd.FullName()),
-				"%s accepts at most %d %s, got %d", cmd.FullName(), max, noun, n,
+				"%s accepts at most %d %s, got %d", cmd.FullName(), maxArgs, noun, n,
 			)
 		}
 		return ctx, nil

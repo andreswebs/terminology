@@ -7,7 +7,7 @@ import (
 
 // ConceptToWriteResult serializes a tbx.Concept into the canonical
 // output.WriteResult shape shared by every read and write command. It is the
-// single Concept-to-JSON serializer; the inverse is WriteResultToConcept.
+// single Concept-to-JSON serializer; the inverse is ResultToConcept.
 //
 // Concept-level fields not represented in WriteResult (Graphics,
 // CustomerSubset, ProjectSubset) and langSec-level Sources are intentionally
@@ -61,7 +61,7 @@ func ConceptToWriteResult(c tbx.Concept) output.WriteResult {
 }
 
 // TermToWriteTerm serializes a tbx.Term into the canonical output.WriteTerm
-// shape. The inverse is WriteTermToTBXTerm.
+// shape. The inverse is TermToTBXTerm.
 func TermToWriteTerm(t tbx.Term) output.WriteTerm {
 	wt := output.WriteTerm{
 		Term:                 t.Surface,

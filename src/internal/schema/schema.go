@@ -1,3 +1,6 @@
+// Package schema introspects the CLI's command tree, JSON envelopes, and error
+// codes to produce machine-readable descriptions consumed by the `schema`
+// command.
 package schema
 
 import (
@@ -9,6 +12,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// CommandDesc describes a CLI command, including its flags, positional
+// arguments, and any nested subcommands.
 type CommandDesc struct {
 	Name      string        `json:"name"`
 	Usage     string        `json:"usage"`
@@ -17,6 +22,8 @@ type CommandDesc struct {
 	Commands  []CommandDesc `json:"commands,omitempty"`
 }
 
+// FlagDesc describes a single command flag, including its type, default value,
+// aliases, and whether it is required.
 type FlagDesc struct {
 	Name     string   `json:"name"`
 	Type     string   `json:"type"`
@@ -26,22 +33,28 @@ type FlagDesc struct {
 	Usage    string   `json:"usage"`
 }
 
+// ArgDesc describes a positional argument and how many values it accepts.
 type ArgDesc struct {
 	Name string `json:"name"`
 	Min  int    `json:"min"`
 	Max  int    `json:"max"`
 }
 
+// EnvelopeDesc describes the fields of a JSON output envelope.
 type EnvelopeDesc struct {
 	Fields []FieldDesc `json:"fields"`
 }
 
+// FieldDesc describes a single envelope field, including its JSON type and any
+// nested child fields for structured values.
 type FieldDesc struct {
 	Name     string      `json:"name"`
 	Type     string      `json:"type"`
 	Children []FieldDesc `json:"children,omitempty"`
 }
 
+// ErrorCodeDesc describes an error the CLI can emit, including its code, process
+// exit code, message, and optional remediation hint.
 type ErrorCodeDesc struct {
 	Code     string `json:"code"`
 	ExitCode int    `json:"exit_code"`
@@ -49,6 +62,8 @@ type ErrorCodeDesc struct {
 	Hint     string `json:"hint,omitempty"`
 }
 
+// WalkCommands describes every subcommand of root, recursing into nested
+// subcommands.
 func WalkCommands(root *urfcli.Command) []CommandDesc {
 	var descs []CommandDesc
 	for _, cmd := range root.Commands {
@@ -137,6 +152,8 @@ func describeArgument(a urfcli.Argument) ArgDesc {
 	}
 }
 
+// ReflectEnvelope describes the JSON fields of an envelope type, using the
+// struct tags of the given zero value.
 func ReflectEnvelope(zero any) EnvelopeDesc {
 	t := reflect.TypeOf(zero)
 	if t.Kind() == reflect.Pointer {
@@ -228,6 +245,7 @@ func jsonType(t reflect.Type) string {
 	}
 }
 
+// EnumerateErrors returns descriptions of all known CLI errors, sorted by code.
 func EnumerateErrors() []ErrorCodeDesc {
 	all := terr.All()
 	descs := make([]ErrorCodeDesc, 0, len(all))

@@ -9,6 +9,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// LoadStopwords reads a stopword file at path, one word per line, ignoring
+// blank lines and comments, and returns the case-folded, NFC-normalized set.
 func LoadStopwords(path string) (map[string]bool, error) {
 	f, err := os.Open(path)
 	if err != nil {

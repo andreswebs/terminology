@@ -11,6 +11,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// ConceptAdd constructs the "concept add" command, which creates a new concept
+// entry.
 func ConceptAdd() *urfcli.Command {
 	flags := []urfcli.Flag{
 		&urfcli.StringFlag{Name: "id", Aliases: []string{"i"}, Usage: "explicit concept id (otherwise derived from canonical preferred term)"},
@@ -171,7 +173,7 @@ func parseConceptFromJSONStdin(data []byte, cmd *urfcli.Command) (*tbx.Concept, 
 		return nil, err
 	}
 
-	c := write.WriteResultToConcept(wr)
+	c := write.ResultToConcept(wr)
 
 	if idFlag := cmd.String("id"); idFlag != "" {
 		c.ID = idFlag

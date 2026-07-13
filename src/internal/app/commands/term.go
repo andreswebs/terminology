@@ -13,6 +13,8 @@ var errNoTermSubcommand = terr.New(
 	"no subcommand specified",
 )
 
+// Term constructs the "term" command, which groups the subcommands for adding
+// or deprecating a term within an existing concept.
 func Term() *urfcli.Command {
 	return &urfcli.Command{
 		Name:  "term",

@@ -18,10 +18,10 @@ var update = flag.Bool("update", false, "rewrite golden files")
 
 func runGolden(t *testing.T, name string, argv []string) {
 	t.Helper()
-	runGoldenCtx(t, name, argv, context.Background())
+	runGoldenCtx(context.Background(), t, name, argv)
 }
 
-func runGoldenCtx(t *testing.T, name string, argv []string, ctx context.Context) {
+func runGoldenCtx(ctx context.Context, t *testing.T, name string, argv []string) {
 	t.Helper()
 
 	var stdout, stderr bytes.Buffer

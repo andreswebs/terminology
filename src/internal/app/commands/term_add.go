@@ -10,6 +10,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// TermAdd constructs the "term add" command, which adds a term to an existing
+// concept's langSec.
 func TermAdd() *urfcli.Command {
 	flags := []urfcli.Flag{
 		langFlag(true, "language tag"),

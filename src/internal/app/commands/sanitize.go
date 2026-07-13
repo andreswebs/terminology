@@ -12,24 +12,29 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// ErrInvalidSanitizeID reports that a concept ID contains rejected characters.
 var ErrInvalidSanitizeID = terr.New(
 	"invalid_id", 65,
 	"concept IDs must not contain control characters, path traversals, percent-encoded segments, or query parameters",
 	"concept ID contains rejected characters",
 )
 
+// ErrInvalidLangTag reports that a language tag is not well-formed BCP 47.
 var ErrInvalidLangTag = terr.New(
 	"invalid_lang_tag", 65,
 	"language tags must be well-formed BCP 47 (e.g. en, es, he, pt-BR)",
 	"language tag is invalid",
 )
 
+// ErrInvalidPath reports that a file path contains rejected characters or
+// escapes the sandbox.
 var ErrInvalidPath = terr.New(
 	"invalid_path", 65,
 	"paths must not contain .., percent-encoded segments, or query parameters",
 	"file path contains rejected characters or escapes the sandbox",
 )
 
+// ErrInvalidTerm reports that a term contains rejected characters.
 var ErrInvalidTerm = terr.New(
 	"invalid_term", 65,
 	"terms must not contain control characters",

@@ -5,6 +5,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// HighFrequencyTokens returns candidates for case-folded tokens that occur at
+// least opts.MinFreq times across spans, skipping any configured stopwords.
 func HighFrequencyTokens(spans []Span, opts Options) []Candidate {
 	minFreq := opts.MinFreq
 	if minFreq <= 0 {

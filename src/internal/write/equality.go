@@ -9,6 +9,8 @@ import (
 
 var transacGrpRe = regexp.MustCompile(`(?s) *<transacGrp>.*?</transacGrp>\n`)
 
+// ConceptsEqual reports whether two concepts are semantically equal, comparing
+// their canonical TBX encodings while ignoring transaction records.
 func ConceptsEqual(a, b *tbx.Concept) (bool, error) {
 	canonA, err := canonicalize(a)
 	if err != nil {

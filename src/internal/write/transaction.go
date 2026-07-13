@@ -9,6 +9,8 @@ import (
 	"github.com/andreswebs/terminology/internal/tbx"
 )
 
+// NewTransaction builds a modification transaction record timestamped from the
+// context clock and attributed to author, warning when author is empty.
 func NewTransaction(ctx context.Context, author string) tbx.Transaction {
 	if author == "" {
 		l := logctx.From(ctx)

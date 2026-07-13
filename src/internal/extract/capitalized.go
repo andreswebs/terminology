@@ -1,3 +1,6 @@
+// Package extract discovers candidate terminology in source text using
+// heuristics such as capitalized phrases, foreign-script tokens, and
+// high-frequency tokens.
 package extract
 
 import (
@@ -8,7 +11,9 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-func CapitalizedPhrases(spans []Span, lang string) []Candidate {
+// CapitalizedPhrases returns candidates built from runs of consecutive
+// capitalized words found in spans, excluding words at sentence start.
+func CapitalizedPhrases(spans []Span, _ string) []Candidate {
 	type entry struct {
 		candidate Candidate
 	}

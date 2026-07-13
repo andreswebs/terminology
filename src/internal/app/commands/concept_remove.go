@@ -11,6 +11,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// ConceptRemove constructs the "concept remove" command, which deletes a
+// concept entry.
 func ConceptRemove() *urfcli.Command {
 	flags := []urfcli.Flag{
 		&urfcli.BoolFlag{Name: "force", Usage: "remove even if other concepts cross-reference this ID"},

@@ -1,3 +1,6 @@
+// Package check compares terminology usage between a source and target
+// document, reporting forbidden, admitted, and missing preferred term
+// variants relative to a glossary.
 package check
 
 import (
@@ -8,12 +11,18 @@ import (
 	"github.com/andreswebs/terminology/internal/tbx"
 )
 
+// Result holds the outcome of a terminology check: the violations and
+// warnings found, along with the number of concepts that were checked.
 type Result struct {
 	Violations      []output.CheckViolation
 	Warnings        []output.CheckWarning
 	ConceptsChecked int
 }
 
+// Check scans the source and target text for glossary terms and reports where
+// the target uses forbidden or admitted variants, or omits the preferred term
+// for a concept present in the source. When strict is true, admitted variants
+// are reported as violations instead of warnings.
 func Check(g *tbx.Glossary, srcText, tgtText []byte,
 	srcLang, tgtLang string, contextSize int, strict bool) (*Result, error) {
 

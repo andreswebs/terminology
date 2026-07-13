@@ -1,3 +1,5 @@
+// Package linguist reads and writes glossaries in the TBX-Linguist format,
+// supporting both the DCT and DCA styles.
 package linguist
 
 import (
@@ -71,15 +73,19 @@ func (dc *decodeCtx) pos() (int, int) {
 	return dc.li.Position(int(dc.dec.InputOffset()))
 }
 
-type LinguistReader struct{}
+// Reader decodes glossaries from the TBX-Linguist XML format.
+type Reader struct{}
 
-func NewReader() *LinguistReader {
-	return &LinguistReader{}
+// NewReader returns a Reader.
+func NewReader() *Reader {
+	return &Reader{}
 }
 
 const maxNestingDepth = 256
 
-func (lr *LinguistReader) Decode(r io.Reader) (*tbx.Glossary, []tbx.Warning, error) {
+// Decode parses a TBX-Linguist document from r, returning the glossary along
+// with any warnings collected while decoding.
+func (lr *Reader) Decode(r io.Reader) (*tbx.Glossary, []tbx.Warning, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, nil, fmt.Errorf("reading input: %w", err)
@@ -552,7 +558,7 @@ func decodeLangSecFields(dc *decodeCtx, se xml.StartElement, ls *tbx.LangSection
 	return nil, nil
 }
 
-func decodeTermSec(dc *decodeCtx, start xml.StartElement) (tbx.Term, []tbx.Warning, error) {
+func decodeTermSec(dc *decodeCtx, _ xml.StartElement) (tbx.Term, []tbx.Warning, error) {
 	var term tbx.Term
 	var warnings []tbx.Warning
 
@@ -789,7 +795,7 @@ func decodeTermFields(dc *decodeCtx, se xml.StartElement, term *tbx.Term) ([]tbx
 	return nil, nil
 }
 
-func decodeAdminGrp(dc *decodeCtx, start xml.StartElement, term *tbx.Term) ([]tbx.Warning, error) {
+func decodeAdminGrp(dc *decodeCtx, _ xml.StartElement, term *tbx.Term) ([]tbx.Warning, error) {
 	var warnings []tbx.Warning
 	for {
 		tok, err := dc.token()
@@ -829,7 +835,7 @@ func decodeAdminGrp(dc *decodeCtx, start xml.StartElement, term *tbx.Term) ([]tb
 	}
 }
 
-func decodeTransacGrp(dc *decodeCtx, start xml.StartElement) (tbx.Transaction, []tbx.Warning, error) {
+func decodeTransacGrp(dc *decodeCtx, _ xml.StartElement) (tbx.Transaction, []tbx.Warning, error) {
 	var tx tbx.Transaction
 	var warnings []tbx.Warning
 

@@ -1,3 +1,5 @@
+// Package commands defines the terminology CLI subcommands and the shared
+// flags, argument validation, and sanitization helpers they rely on.
 package commands
 
 import (
@@ -14,6 +16,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Apply constructs the "apply" command, which reconciles a declarative JSON or
+// TBX payload against the glossary.
 func Apply() *urfcli.Command {
 	flags := []urfcli.Flag{
 		&urfcli.StringFlag{

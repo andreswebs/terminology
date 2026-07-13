@@ -12,6 +12,8 @@ import (
 
 var nonAlnum = regexp.MustCompile(`[^a-z0-9]+`)
 
+// DeriveID derives a slug concept ID from a term by normalizing, casefolding,
+// and hyphenating it, then truncating to 64 codepoints on a hyphen boundary.
 func DeriveID(term string) (string, error) {
 	// NFKD normalize
 	b := norm.NFKD.Bytes([]byte(term))
@@ -45,13 +47,13 @@ func DeriveID(term string) (string, error) {
 	return slug, nil
 }
 
-func truncate(s string, max int) string {
+func truncate(s string, maxLen int) string {
 	runes := []rune(s)
-	if len(runes) <= max {
+	if len(runes) <= maxLen {
 		return s
 	}
 
-	runes = runes[:max]
+	runes = runes[:maxLen]
 	result := string(runes)
 
 	if result[len(result)-1] == '-' {

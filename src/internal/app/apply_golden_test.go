@@ -160,10 +160,10 @@ func TestApply_NoTBX_Golden(t *testing.T) {
 func TestApply_Transaction_Golden(t *testing.T) {
 	tbx := copyFixture(t, "minimal-dct.tbx")
 	payload := writePayloadFile(t, "payload.json", `{"concepts":[{"concept_id":"binah","subject_field":"kabbalah","languages":{"en":{"preferred":{"term":"binah"}}}}]}`)
-	runGoldenCtx(t, "apply/transaction", []string{
+	runGoldenCtx(writeCtx(), t, "apply/transaction", []string{
 		"terminology", "--tbx", tbx, "apply", "--file", payload,
 		"--transaction", "--author", "test-author",
-	}, writeCtx())
+	})
 }
 
 // --- apply: file not found ---

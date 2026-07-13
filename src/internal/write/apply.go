@@ -12,6 +12,9 @@ import (
 	"github.com/andreswebs/terminology/internal/tbx"
 )
 
+// ApplyPayload is the JSON envelope accepted by the `apply` command, matching
+// the shape emitted by `export` so exported output can be piped straight back
+// in.
 type ApplyPayload struct {
 	// SchemaVersion and OK are accepted but ignored so that the full envelope
 	// emitted by `export` (schema_version + ok + concepts) is directly
@@ -21,6 +24,8 @@ type ApplyPayload struct {
 	Concepts      []output.WriteResult `json:"concepts"`
 }
 
+// ParseApplyJSON decodes an ApplyPayload and converts its write results into
+// concepts, rejecting unknown fields.
 func ParseApplyJSON(data []byte) ([]tbx.Concept, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
@@ -32,13 +37,15 @@ func ParseApplyJSON(data []byte) ([]tbx.Concept, error) {
 
 	concepts := make([]tbx.Concept, 0, len(payload.Concepts))
 	for i := range payload.Concepts {
-		concepts = append(concepts, WriteResultToConcept(&payload.Concepts[i]))
+		concepts = append(concepts, ResultToConcept(&payload.Concepts[i]))
 	}
 
 	return concepts, nil
 }
 
-func WriteResultToConcept(wr *output.WriteResult) tbx.Concept {
+// ResultToConcept converts an output.WriteResult into a tbx.Concept,
+// expanding each language group's terms by administrative status.
+func ResultToConcept(wr *output.WriteResult) tbx.Concept {
 	c := tbx.Concept{
 		ID:           wr.ConceptID,
 		SubjectField: wr.SubjectField,
@@ -61,16 +68,16 @@ func WriteResultToConcept(wr *output.WriteResult) tbx.Concept {
 			ls.Definitions = append(ls.Definitions, tbx.NoteText{Plain: d})
 		}
 		if grp.Preferred != nil {
-			ls.Terms = append(ls.Terms, WriteTermToTBXTerm(*grp.Preferred, tbx.StatusPreferred))
+			ls.Terms = append(ls.Terms, TermToTBXTerm(*grp.Preferred, tbx.StatusPreferred))
 		}
 		for _, at := range grp.Admitted {
-			ls.Terms = append(ls.Terms, WriteTermToTBXTerm(at, tbx.StatusAdmitted))
+			ls.Terms = append(ls.Terms, TermToTBXTerm(at, tbx.StatusAdmitted))
 		}
 		for _, dt := range grp.Deprecated {
-			ls.Terms = append(ls.Terms, WriteTermToTBXTerm(dt, tbx.StatusDeprecated))
+			ls.Terms = append(ls.Terms, TermToTBXTerm(dt, tbx.StatusDeprecated))
 		}
 		for _, st := range grp.Superseded {
-			ls.Terms = append(ls.Terms, WriteTermToTBXTerm(st, tbx.StatusSuperseded))
+			ls.Terms = append(ls.Terms, TermToTBXTerm(st, tbx.StatusSuperseded))
 		}
 		c.Languages[lang] = ls
 	}
@@ -78,7 +85,9 @@ func WriteResultToConcept(wr *output.WriteResult) tbx.Concept {
 	return c
 }
 
-func WriteTermToTBXTerm(wt output.WriteTerm, defaultStatus tbx.Status) tbx.Term {
+// TermToTBXTerm converts an output.WriteTerm into a tbx.Term, applying
+// defaultStatus unless the term overrides its administrative status.
+func TermToTBXTerm(wt output.WriteTerm, defaultStatus tbx.Status) tbx.Term {
 	status := defaultStatus
 	if wt.AdministrativeStatus != "" {
 		status = tbx.ParseStatus(wt.AdministrativeStatus)
@@ -114,13 +123,17 @@ func WriteTermToTBXTerm(wt output.WriteTerm, defaultStatus tbx.Status) tbx.Term 
 	return t
 }
 
+// PayloadFormat identifies the serialization format of an apply payload.
 type PayloadFormat int
 
+// Recognized apply payload formats.
 const (
 	FormatJSON PayloadFormat = iota
 	FormatTBX
 )
 
+// DetectPayloadFormat determines a payload's format from the file extension
+// when available, falling back to sniffing the first non-whitespace byte.
 func DetectPayloadFormat(filePath string, data []byte) (PayloadFormat, error) {
 	if filePath != "-" && filePath != "" {
 		ext := strings.ToLower(filepath.Ext(filePath))
@@ -153,6 +166,8 @@ func sniffFormat(data []byte) (PayloadFormat, error) {
 	return 0, ErrInvalidInput.Wrap(fmt.Errorf("empty payload"))
 }
 
+// LoadApplyFile reads the payload at filePath (or stdin for "-"), detects its
+// format, and parses it into concepts.
 func LoadApplyFile(filePath string) ([]tbx.Concept, error) {
 	data, err := readPayloadFile(filePath)
 	if err != nil {

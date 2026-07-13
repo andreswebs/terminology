@@ -9,6 +9,8 @@ import (
 	gmtext "github.com/yuin/goldmark/text"
 )
 
+// Span is a run of markdown text content together with its byte offset and
+// line/column position in the source.
 type Span struct {
 	Text   string
 	Offset int
@@ -16,6 +18,8 @@ type Span struct {
 	Col    int
 }
 
+// Spans returns an iterator over the plain-text spans of src, skipping code
+// blocks, code spans, and raw HTML.
 func Spans(src []byte) iter.Seq[Span] {
 	reader := gmtext.NewReader(src)
 	parser := goldmark.DefaultParser()

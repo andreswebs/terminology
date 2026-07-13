@@ -70,7 +70,7 @@ func TestParseJSONInput_PerLanguageDefinition(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseJSONInput: %v", err)
 	}
-	c := WriteResultToConcept(wr)
+	c := ResultToConcept(wr)
 	ls, ok := c.Languages["en"]
 	if !ok {
 		t.Fatalf("expected en language section")
@@ -129,7 +129,7 @@ func TestRoundTrip_ConceptToWriteResult_Lossless(t *testing.T) {
 		},
 	}
 
-	rt := WriteResultToConcept(ptrTo(ConceptToWriteResult(c)))
+	rt := ResultToConcept(ptrTo(ConceptToWriteResult(c)))
 	eq, err := ConceptsEqual(&c, &rt)
 	if err != nil {
 		t.Fatalf("ConceptsEqual: %v", err)

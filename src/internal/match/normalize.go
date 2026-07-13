@@ -8,11 +8,16 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// Canonical is the normalized form of some source bytes, where Map records the
+// original byte offset that each canonical byte derives from.
 type Canonical struct {
 	Bytes []byte
 	Map   []int
 }
 
+// Normalize canonicalizes src according to p, applying Unicode normalization,
+// optional case folding, diacritic and niqqud stripping, and whitespace
+// collapsing, while tracking the mapping back to source offsets.
 func Normalize(src []byte, p Policy) Canonical {
 	if len(src) == 0 {
 		return Canonical{}

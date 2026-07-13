@@ -9,6 +9,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Lookup constructs the "lookup" command, which looks up a term across all
+// languages in the TBX file.
 func Lookup() *urfcli.Command {
 	return &urfcli.Command{
 		Name:      "lookup",

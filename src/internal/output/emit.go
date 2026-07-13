@@ -1,3 +1,6 @@
+// Package output builds and emits the JSON result envelopes shared by every
+// CLI command, along with field projection, error formatting, and the
+// command registry that maps commands to their envelope and exit-code sets.
 package output
 
 import (
@@ -6,6 +9,7 @@ import (
 	"io"
 )
 
+// EmitJSON marshals v to JSON and writes it to w followed by a newline.
 func EmitJSON(w io.Writer, v any) error {
 	data, err := json.Marshal(v)
 	if err != nil {

@@ -39,6 +39,8 @@ func init() {
 	RegisterExitCodes("list", []int{0, 2, 3, 65})
 }
 
+// ValidateEnvelope carries the result of the `validate` command: the glossary
+// concept count, languages, and any structural warnings.
 type ValidateEnvelope struct {
 	SchemaVersion int               `json:"schema_version"`
 	OK            bool              `json:"ok"`
@@ -47,6 +49,7 @@ type ValidateEnvelope struct {
 	Warnings      []ValidateWarning `json:"warnings"`
 }
 
+// ValidateWarning describes a single non-fatal issue found during validation.
 type ValidateWarning struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
@@ -65,12 +68,15 @@ type LookupEnvelope struct {
 	Results       []WriteResult `json:"results"`
 }
 
+// ExtractEnvelope carries the candidate terms produced by the `extract` command.
 type ExtractEnvelope struct {
 	SchemaVersion int                `json:"schema_version"`
 	OK            bool               `json:"ok"`
 	Candidates    []ExtractCandidate `json:"candidates"`
 }
 
+// ExtractCandidate is a single extracted term with its frequency, the heuristic
+// that surfaced it, and optional source locations.
 type ExtractCandidate struct {
 	Term      string            `json:"term"`
 	Frequency int               `json:"frequency"`
@@ -78,12 +84,14 @@ type ExtractCandidate struct {
 	Locations []ExtractLocation `json:"locations,omitempty"`
 }
 
+// ExtractLocation identifies where a candidate term occurs in a source file.
 type ExtractLocation struct {
 	File string `json:"file"`
 	Line int    `json:"line,omitempty"`
 	Col  int    `json:"col,omitempty"`
 }
 
+// MarshalJSON emits the envelope with a non-nil candidates array.
 func (e ExtractEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ExtractEnvelope
 	a := Alias(e)
@@ -93,6 +101,7 @@ func (e ExtractEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// MarshalJSON emits the envelope with a non-nil results array.
 func (e LookupEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias LookupEnvelope
 	a := Alias(e)
@@ -102,6 +111,7 @@ func (e LookupEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// ScanEnvelope carries the matches found by the `scan` command in one file.
 type ScanEnvelope struct {
 	SchemaVersion int         `json:"schema_version"`
 	OK            bool        `json:"ok"`
@@ -110,6 +120,7 @@ type ScanEnvelope struct {
 	Summary       ScanSummary `json:"summary"`
 }
 
+// ScanMatch is a single glossary term occurrence located during a scan.
 type ScanMatch struct {
 	ConceptID string `json:"concept_id"`
 	Term      string `json:"term"`
@@ -120,11 +131,13 @@ type ScanMatch struct {
 	Context   string `json:"context"`
 }
 
+// ScanSummary aggregates counts across all scan matches.
 type ScanSummary struct {
 	TotalMatches   int `json:"total_matches"`
 	UniqueConcepts int `json:"unique_concepts"`
 }
 
+// MarshalJSON emits the envelope with a non-nil matches array.
 func (e ScanEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ScanEnvelope
 	a := Alias(e)
@@ -134,6 +147,8 @@ func (e ScanEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// CheckEnvelope carries the terminology-consistency findings of the `check`
+// command between a source and target text.
 type CheckEnvelope struct {
 	SchemaVersion int              `json:"schema_version"`
 	OK            bool             `json:"ok"`
@@ -144,6 +159,7 @@ type CheckEnvelope struct {
 	Summary       CheckSummary     `json:"summary"`
 }
 
+// CheckViolation describes a terminology rule broken in the target text.
 type CheckViolation struct {
 	Type              string `json:"type"`
 	ConceptID         string `json:"concept_id"`
@@ -156,6 +172,7 @@ type CheckViolation struct {
 	Context           string `json:"context,omitempty"`
 }
 
+// CheckWarning describes a non-fatal terminology concern found during a check.
 type CheckWarning struct {
 	Type      string `json:"type"`
 	ConceptID string `json:"concept_id"`
@@ -166,18 +183,23 @@ type CheckWarning struct {
 	Context   string `json:"context,omitempty"`
 }
 
+// CheckSummary aggregates counts across a check run.
 type CheckSummary struct {
 	Violations      int `json:"violations"`
 	Warnings        int `json:"warnings"`
 	ConceptsChecked int `json:"concepts_checked"`
 }
 
+// WriteEnvelope carries the concept produced by a write command (concept and
+// term add/update/remove/deprecate).
 type WriteEnvelope struct {
 	SchemaVersion int         `json:"schema_version"`
 	OK            bool        `json:"ok"`
 	Result        WriteResult `json:"result"`
 }
 
+// WriteResult is the canonical concept shape shared by every read and write
+// command: concept-level metadata plus its per-language term groups.
 type WriteResult struct {
 	ConceptID    string                    `json:"concept_id"`
 	SubjectField string                    `json:"subject_field,omitempty"`
@@ -189,11 +211,14 @@ type WriteResult struct {
 	Languages    map[string]WriteTermGroup `json:"languages"`
 }
 
+// WriteCrossRef is a reference from one concept or term to another target.
 type WriteCrossRef struct {
 	Target string `json:"target"`
 	Label  string `json:"label,omitempty"`
 }
 
+// WriteTermGroup holds the terms of a single language, split by administrative
+// status (preferred, admitted, deprecated, superseded).
 type WriteTermGroup struct {
 	Definitions []string    `json:"definitions,omitempty"`
 	Preferred   *WriteTerm  `json:"preferred,omitempty"`
@@ -202,6 +227,8 @@ type WriteTermGroup struct {
 	Superseded  []WriteTerm `json:"superseded,omitempty"`
 }
 
+// WriteTerm is a single term with its full set of linguistic and administrative
+// attributes.
 type WriteTerm struct {
 	Term                 string          `json:"term"`
 	AdministrativeStatus string          `json:"administrative_status,omitempty"`
@@ -224,6 +251,7 @@ type WriteTerm struct {
 	Notes                []string        `json:"notes,omitempty"`
 }
 
+// MarshalJSON emits the envelope with a non-nil languages map.
 func (e WriteEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias WriteEnvelope
 	a := Alias(e)
@@ -233,6 +261,8 @@ func (e WriteEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// ApplyEnvelope carries the outcome of the `apply` command: which concepts were
+// added, updated, removed, or left unchanged, plus any warnings.
 type ApplyEnvelope struct {
 	SchemaVersion int         `json:"schema_version"`
 	OK            bool        `json:"ok"`
@@ -240,6 +270,7 @@ type ApplyEnvelope struct {
 	Warnings      []string    `json:"warnings"`
 }
 
+// ApplyResult groups the concept ids affected by an apply, by action taken.
 type ApplyResult struct {
 	Added     []string `json:"added"`
 	Updated   []string `json:"updated"`
@@ -247,12 +278,14 @@ type ApplyResult struct {
 	Unchanged []string `json:"unchanged"`
 }
 
+// ApplyFailure describes a single concept that could not be applied.
 type ApplyFailure struct {
 	ConceptID string `json:"concept_id"`
 	Code      string `json:"code"`
 	Message   string `json:"message"`
 }
 
+// MarshalJSON emits the envelope with non-nil result slices and warnings.
 func (e ApplyEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ApplyEnvelope
 	a := Alias(e)
@@ -274,12 +307,14 @@ func (e ApplyEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// SearchEnvelope carries the concepts matched by the `search` command.
 type SearchEnvelope struct {
 	SchemaVersion int           `json:"schema_version"`
 	OK            bool          `json:"ok"`
 	Results       []WriteResult `json:"results"`
 }
 
+// MarshalJSON emits the envelope with a non-nil results array.
 func (e SearchEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias SearchEnvelope
 	a := Alias(e)
@@ -298,6 +333,7 @@ type ExportEnvelope struct {
 	Concepts      []WriteResult `json:"concepts"`
 }
 
+// MarshalJSON emits the envelope with a non-nil concepts array.
 func (e ExportEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ExportEnvelope
 	a := Alias(e)
@@ -314,6 +350,7 @@ type ShowEnvelope struct {
 	Concept       WriteResult `json:"concept"`
 }
 
+// MarshalJSON emits the envelope with a non-nil languages map on the concept.
 func (e ShowEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ShowEnvelope
 	a := Alias(e)
@@ -333,6 +370,7 @@ type ListEnvelope struct {
 	Concepts      []WriteResult `json:"concepts"`
 }
 
+// MarshalJSON emits the envelope with a non-nil concepts array.
 func (e ListEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias ListEnvelope
 	a := Alias(e)
@@ -342,6 +380,8 @@ func (e ListEnvelope) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// InitEnvelope carries the result of the `init` command that scaffolds a new
+// glossary.
 type InitEnvelope struct {
 	SchemaVersion int    `json:"schema_version"`
 	OK            bool   `json:"ok"`
@@ -350,6 +390,7 @@ type InitEnvelope struct {
 	DryRun        bool   `json:"dry_run,omitempty"`
 }
 
+// MarshalJSON emits the envelope with non-nil violations and warnings arrays.
 func (e CheckEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias CheckEnvelope
 	a := Alias(e)

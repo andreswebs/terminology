@@ -1,3 +1,6 @@
+// Package write applies mutations to a TBX glossary: parsing JSON and TBX
+// payloads, reconciling concepts, and validating the result before persisting
+// changes to disk.
 package write
 
 import (
@@ -15,6 +18,7 @@ import (
 	"github.com/andreswebs/terminology/internal/terr"
 )
 
+// Mutator mutates a glossary in place and returns the concept it affected.
 type Mutator func(g *tbx.Glossary) (*tbx.Concept, error)
 
 var fatalWarningCodes = map[string]bool{
@@ -24,6 +28,8 @@ var fatalWarningCodes = map[string]bool{
 	"invalid_lang_tag":    true,
 }
 
+// Execute loads the glossary at path, applies mutate, validates the result, and
+// saves it back unless dryRun is set. It returns the affected concept.
 func Execute(path string, mutate Mutator, dryRun bool) (*tbx.Concept, error) {
 	g, _, err := tbx.Load(path)
 	if err != nil {
@@ -51,6 +57,9 @@ func Execute(path string, mutate Mutator, dryRun bool) (*tbx.Concept, error) {
 	return affected, nil
 }
 
+// ParseTBXFragment parses a TBX fragment rooted at <conceptEntry> or
+// <conceptEntryList> into concepts, rejecting full <tbx> documents and any
+// fragment containing unsupported elements.
 func ParseTBXFragment(data []byte) ([]tbx.Concept, error) {
 	rootName, err := firstElementName(data)
 	if err != nil {
@@ -228,6 +237,8 @@ func extractListInner(data []byte) []byte {
 	return entries
 }
 
+// ParseJSONInput decodes a single concept's JSON payload into a WriteResult,
+// rejecting unknown fields.
 func ParseJSONInput(data []byte) (*output.WriteResult, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
@@ -259,6 +270,8 @@ func validateForWrite(g *tbx.Glossary) error {
 	return nil
 }
 
+// ApplyValidationError reports that an apply payload failed validation, carrying
+// the per-concept failures so no changes are written.
 type ApplyValidationError struct {
 	Failures []output.ApplyFailure
 }
@@ -267,9 +280,16 @@ func (e *ApplyValidationError) Error() string {
 	return fmt.Sprintf("%d concept(s) failed validation; no changes written", len(e.Failures))
 }
 
-func (e *ApplyValidationError) Code() string  { return ErrApplyValidationFailed.Code() }
+// Code returns the error code shared with ErrApplyValidationFailed.
+func (e *ApplyValidationError) Code() string { return ErrApplyValidationFailed.Code() }
+
+// ExitCode returns the process exit code shared with ErrApplyValidationFailed.
 func (e *ApplyValidationError) ExitCode() int { return ErrApplyValidationFailed.ExitCode() }
-func (e *ApplyValidationError) Hint() string  { return ErrApplyValidationFailed.Hint() }
+
+// Hint returns the remediation hint shared with ErrApplyValidationFailed.
+func (e *ApplyValidationError) Hint() string { return ErrApplyValidationFailed.Hint() }
+
+// ErrorDetails returns the per-concept failures for the error envelope.
 func (e *ApplyValidationError) ErrorDetails() any {
 	return map[string][]output.ApplyFailure{"failures": e.Failures}
 }

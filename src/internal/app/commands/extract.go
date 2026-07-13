@@ -17,6 +17,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// Extract constructs the "extract" command, which surfaces candidate terms
+// from a markdown corpus.
 func Extract() *urfcli.Command {
 	return &urfcli.Command{
 		Name:      "extract",

@@ -10,6 +10,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Schema constructs the "schema" command, which emits a reflective description
+// of the CLI surface, envelopes, and error codes.
 func Schema() *urfcli.Command {
 	return &urfcli.Command{
 		Name:  "schema",

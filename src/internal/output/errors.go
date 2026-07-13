@@ -10,6 +10,7 @@ import (
 	"github.com/andreswebs/terminology/internal/terr"
 )
 
+// ErrInvalidField reports a field path that does not exist on the target envelope.
 var ErrInvalidField = terr.New(
 	"invalid_field", 2,
 	"see `terminology schema --command CMD` for valid paths",
@@ -22,6 +23,8 @@ type errorEnvelope struct {
 	Error         *errorDetail `json:"error"`
 }
 
+// Detailed is implemented by errors that carry structured details to include
+// in the error envelope.
 type Detailed interface {
 	ErrorDetails() any
 }
@@ -33,6 +36,8 @@ type errorDetail struct {
 	Details any    `json:"details,omitempty"`
 }
 
+// EmitError writes err to w in the given format ("text" or JSON), resolving its
+// code, message, hint, and any structured details.
 func EmitError(w io.Writer, format string, err error) {
 	code, message, hint := "internal_error", err.Error(), ""
 
@@ -75,6 +80,7 @@ func EmitError(w io.Writer, format string, err error) {
 	}
 }
 
+// ExitCodeFor returns the process exit code that err should map to.
 func ExitCodeFor(err error) int {
 	var coded terr.Coded
 	if errors.As(err, &coded) {

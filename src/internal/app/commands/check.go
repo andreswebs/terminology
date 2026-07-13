@@ -13,12 +13,16 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// ErrLanguageRequired reports that no source or target language could be
+// resolved from flags or frontmatter.
 var ErrLanguageRequired = terr.New(
 	"language_required", 2,
 	"pass --source-lang/--target-lang or add 'lang: LANG' to frontmatter",
 	"language not specified",
 )
 
+// Check constructs the "check" command, which verifies a translated target
+// file against its source given the glossary.
 func Check() *urfcli.Command {
 	return &urfcli.Command{
 		Name:      "check",

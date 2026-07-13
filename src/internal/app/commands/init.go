@@ -13,6 +13,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Init constructs the "init" command, which creates a minimal valid
+// TBX-Linguist skeleton at the target path.
 func Init() *urfcli.Command {
 	return &urfcli.Command{
 		Name:  "init",

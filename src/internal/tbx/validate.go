@@ -7,6 +7,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+// ValidateResult summarizes the outcome of validating a glossary, including
+// counts, the languages present, and any warnings or errors found.
 type ValidateResult struct {
 	Concepts  int
 	Languages []string
@@ -14,6 +16,10 @@ type ValidateResult struct {
 	Errors    []Warning
 }
 
+// Validate checks the glossary for duplicate IDs, malformed language tags,
+// empty language sections, and unresolved cross-references. When strict is
+// true, unresolved cross-references are reported as errors rather than
+// warnings.
 func (g *Glossary) Validate(strict bool) ValidateResult {
 	var res ValidateResult
 	res.Concepts = len(g.Concepts)

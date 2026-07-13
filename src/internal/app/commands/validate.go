@@ -9,6 +9,8 @@ import (
 	urfcli "github.com/urfave/cli/v3"
 )
 
+// Validate constructs the "validate" command, which validates a TBX file
+// against the supported subset.
 func Validate() *urfcli.Command {
 	return &urfcli.Command{
 		Name:  "validate",

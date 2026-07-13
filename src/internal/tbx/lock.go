@@ -6,6 +6,8 @@ import (
 	"github.com/rogpeppe/go-internal/lockedfile"
 )
 
+// AcquireLock creates a lock file at lockPath and returns a release function
+// that closes and removes it. It fails with ErrTBXLocked if the lock is held.
 func AcquireLock(lockPath string) (func(), error) {
 	return acquireLock(lockPath)
 }

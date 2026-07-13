@@ -1,3 +1,5 @@
+// Command terminology is the CLI entrypoint for agent-driven academic
+// translation with terminology enforcement against a TBX-Linguist glossary.
 package main
 
 import (

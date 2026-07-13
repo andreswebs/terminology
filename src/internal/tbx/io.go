@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 )
 
+// Load reads the TBX file at path, detects its dialect, and decodes it into a
+// Glossary, returning any non-fatal warnings encountered during decoding.
 func Load(path string) (*Glossary, []Warning, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -37,6 +39,7 @@ func Load(path string) (*Glossary, []Warning, error) {
 	return r.Decode(bytes.NewReader(data))
 }
 
+// Save writes g to path atomically while holding the file lock.
 func Save(path string, g *Glossary) error {
 	lockPath := path + ".lock"
 	unlock, err := acquireLock(lockPath)
@@ -48,6 +51,8 @@ func Save(path string, g *Glossary) error {
 	return writeFile(path, g)
 }
 
+// SaveLocked writes g to path atomically, assuming the caller already holds
+// the file lock.
 func SaveLocked(path string, g *Glossary) error {
 	return writeFile(path, g)
 }

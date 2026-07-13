@@ -1,3 +1,5 @@
+// Package match locates glossary terms in text by normalizing both terms and
+// input to a canonical form and scanning with an Aho-Corasick automaton.
 package match
 
 import (
