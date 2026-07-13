@@ -1,6 +1,6 @@
 ---
 id: ter-po3t
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-07-12T11:18:13Z
@@ -234,3 +234,9 @@ Run `make build` from the project root. For a tighter loop use `make test`
 (package: `go test ./src/internal/write/... ./src/internal/app/...`) then finish
 with a full `make build`. Do not silence lint with `_ =`.
 
+
+## Notes
+
+**2026-07-13T17:01:19Z**
+
+Fixed silent data loss on TBX fragment ingest (concept add + apply, shared ParseTBXFragment). Two-part fix in src/internal/write/write.go: (1) detectFragmentStyle() scans start-element local names for DCA generic carriers (descrip/termNote/admin/adminNote/ref/xref/transac/transacNote); wrapInTBXShell now emits style=dca|dct accordingly so the existing dialectDCA machinery maps DCA carriers instead of the DCT reader skipping them. (2) ParseTBXFragment now captures reader warnings and fails closed on any unknown_element, returning an invalid_input-coded error (exit 65) whose message names the dropped element(s) via terr.Newf reusing ErrInvalidInput code/exit/hint. Note: terr.E.Error() returns only the static sentinel message and EmitError surfaces coded.Error(), so .Wrap(cause) alone would NOT name the element — used terr.Newf for a dynamic message instead. Tests: write_test.go cycles 1-3 (DCA persists, DCT regression guard, unknown fails closed); write_golden_test.go cycles 4 CLI e2e (runCLI helper reads file back). Docs: write-details.md fragment caveat rewritten. Verified exact repro: grep -c definition=1, exit 0; unknown element -> exit 65, file unchanged.

@@ -1,13 +1,17 @@
 package app_test
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/andreswebs/terminology/internal/app"
 	"github.com/andreswebs/terminology/internal/clock"
+	"github.com/andreswebs/terminology/internal/output"
 )
 
 type fakeClock struct{ T time.Time }
@@ -319,4 +323,93 @@ func TestTBXPath_Traversal_Golden(t *testing.T) {
 	runGolden(t, "sanitize/tbx_path_traversal", []string{
 		"terminology", "--tbx", "../../../etc/passwd", "validate",
 	})
+}
+
+// --- BUG-1: TBX fragment must not silently drop definitions/statuses ---
+
+func runCLI(t *testing.T, argv []string) (stdout, stderr string, exit int) {
+	t.Helper()
+	var out, errb bytes.Buffer
+	cmd := app.Root()
+	cmd.Writer = &out
+	cmd.ErrWriter = &errb
+	err := cmd.Run(context.Background(), argv)
+	if err != nil {
+		exit = output.ExitCodeFor(err)
+		output.EmitError(&errb, cmd.String("format"), err)
+	}
+	return out.String(), errb.String(), exit
+}
+
+func TestConceptAdd_DCAFragment_PersistsDefinitionAndStatus(t *testing.T) {
+	tbxPath := copyFixture(t, "minimal-dct.tbx")
+	restore := pipeStdin(t, `<conceptEntry id="irimi-nage">
+  <descrip type="subjectField">aikido</descrip>
+  <langSec xml:lang="en">
+    <descrip type="definition">Nage enters past uke to throw.</descrip>
+    <termSec>
+      <term>entering throw</term>
+      <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+    </termSec>
+  </langSec>
+</conceptEntry>`)
+	defer restore()
+
+	stdout, stderr, exit := runCLI(t, []string{"terminology", "--tbx", tbxPath, "concept", "add"})
+	if exit != 0 {
+		t.Fatalf("exit = %d, want 0; stderr=%s", exit, stderr)
+	}
+	if !strings.Contains(stdout, `"ok":true`) {
+		t.Errorf("stdout missing ok:true: %s", stdout)
+	}
+
+	data, err := os.ReadFile(tbxPath)
+	if err != nil {
+		t.Fatalf("read back: %v", err)
+	}
+	content := string(data)
+	if !strings.Contains(content, "Nage enters past uke to throw.") {
+		t.Errorf("definition not persisted:\n%s", content)
+	}
+	if !strings.Contains(content, "preferredTerm-admn-sts") {
+		t.Errorf("administrative status not persisted:\n%s", content)
+	}
+	if !strings.Contains(content, "aikido") {
+		t.Errorf("subject field not persisted:\n%s", content)
+	}
+}
+
+func TestConceptAdd_UnknownFragmentElement_FailsClosed(t *testing.T) {
+	tbxPath := copyFixture(t, "minimal-dct.tbx")
+	before, err := os.ReadFile(tbxPath)
+	if err != nil {
+		t.Fatalf("read before: %v", err)
+	}
+
+	restore := pipeStdin(t, `<conceptEntry id="x">
+  <langSec xml:lang="en">
+    <descrip type="madeUpThing">nonsense</descrip>
+    <termSec><term>x</term></termSec>
+  </langSec>
+</conceptEntry>`)
+	defer restore()
+
+	_, stderr, exit := runCLI(t, []string{"terminology", "--tbx", tbxPath, "concept", "add"})
+	if exit != 65 {
+		t.Fatalf("exit = %d, want 65; stderr=%s", exit, stderr)
+	}
+	if !strings.Contains(stderr, `"code":"invalid_input"`) {
+		t.Errorf("stderr missing invalid_input code: %s", stderr)
+	}
+	if !strings.Contains(stderr, "madeUpThing") {
+		t.Errorf("stderr does not name the offending element: %s", stderr)
+	}
+
+	after, err := os.ReadFile(tbxPath)
+	if err != nil {
+		t.Fatalf("read after: %v", err)
+	}
+	if string(before) != string(after) {
+		t.Errorf("glossary file was modified on failed write")
+	}
 }

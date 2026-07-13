@@ -95,13 +95,13 @@ func TestLookupEnvelope_JSONShape(t *testing.T) {
 	env := output.LookupEnvelope{
 		SchemaVersion: 1,
 		OK:            true,
-		Results: []output.LookupResult{
+		Results: []output.WriteResult{
 			{
 				ConceptID:    "tzimtzum",
 				SubjectField: "kabbalah",
-				Languages: map[string]output.LookupTermGroup{
-					"he": {Preferred: &output.LookupTerm{Term: "צמצום"}},
-					"es": {Preferred: &output.LookupTerm{Term: "tzimtzum"}},
+				Languages: map[string]output.WriteTermGroup{
+					"he": {Preferred: &output.WriteTerm{Term: "צמצום"}},
+					"es": {Preferred: &output.WriteTerm{Term: "tzimtzum"}},
 				},
 			},
 		},
@@ -162,7 +162,7 @@ func TestLookupEnvelope_EmptyResultsSerializesAsArray(t *testing.T) {
 	env := output.LookupEnvelope{
 		SchemaVersion: 1,
 		OK:            true,
-		Results:       []output.LookupResult{},
+		Results:       []output.WriteResult{},
 	}
 
 	data, err := json.Marshal(env)
@@ -201,61 +201,46 @@ func TestLookupEnvelope_NilResultsSerializesAsArray(t *testing.T) {
 	}
 }
 
-func TestLookupResult_OmitemptySubjectField(t *testing.T) {
-	r := output.LookupResult{
-		ConceptID: "test",
-		Languages: map[string]output.LookupTermGroup{},
-	}
+func TestExportEnvelope_EmptyConceptsSerializesAsArray(t *testing.T) {
+	env := output.ExportEnvelope{SchemaVersion: 1, OK: true}
 
-	data, err := json.Marshal(r)
+	data, err := json.Marshal(env)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	raw := string(data)
-	if contains(raw, `"subject_field"`) {
-		t.Errorf("JSON contains subject_field but should omit empty: %s", raw)
+	if raw := string(data); !contains(raw, `"concepts":[]`) {
+		t.Errorf("expected empty concepts array, got: %s", raw)
 	}
 }
 
-func TestLookupTermGroup_OmitemptyAdmitted(t *testing.T) {
-	g := output.LookupTermGroup{
-		Preferred: &output.LookupTerm{Term: "test"},
+func TestShowEnvelope_NilLanguagesSerializesAsObject(t *testing.T) {
+	env := output.ShowEnvelope{
+		SchemaVersion: 1,
+		OK:            true,
+		Concept:       output.WriteResult{ConceptID: "test"},
 	}
 
-	data, err := json.Marshal(g)
+	data, err := json.Marshal(env)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	raw := string(data)
-	if contains(raw, `"admitted"`) {
-		t.Errorf("JSON contains admitted but should omit empty: %s", raw)
+	if raw := string(data); !contains(raw, `"languages":{}`) {
+		t.Errorf("expected empty languages object, got: %s", raw)
 	}
 }
 
-func TestLookupTermGroup_AdmittedPresent(t *testing.T) {
-	g := output.LookupTermGroup{
-		Preferred: &output.LookupTerm{Term: "preferred"},
-		Admitted:  []output.LookupTerm{{Term: "alt1"}, {Term: "alt2"}},
-	}
+func TestListEnvelope_EmptyConceptsSerializesAsArray(t *testing.T) {
+	env := output.ListEnvelope{SchemaVersion: 1, OK: true}
 
-	data, err := json.Marshal(g)
+	data, err := json.Marshal(env)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
 
-	var got map[string]any
-	if err := json.Unmarshal(data, &got); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-
-	admitted, ok := got["admitted"].([]any)
-	if !ok {
-		t.Fatalf("admitted is not an array: %T", got["admitted"])
-	}
-	if len(admitted) != 2 {
-		t.Errorf("admitted length = %d, want 2", len(admitted))
+	if raw := string(data); !contains(raw, `"concepts":[]`) {
+		t.Errorf("expected empty concepts array, got: %s", raw)
 	}
 }
 

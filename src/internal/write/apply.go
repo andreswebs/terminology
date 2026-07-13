@@ -13,7 +13,12 @@ import (
 )
 
 type ApplyPayload struct {
-	Concepts []output.WriteResult `json:"concepts"`
+	// SchemaVersion and OK are accepted but ignored so that the full envelope
+	// emitted by `export` (schema_version + ok + concepts) is directly
+	// apply-consumable, enabling `terminology export | terminology apply -f -`.
+	SchemaVersion int                  `json:"schema_version"`
+	OK            bool                 `json:"ok"`
+	Concepts      []output.WriteResult `json:"concepts"`
 }
 
 func ParseApplyJSON(data []byte) ([]tbx.Concept, error) {
@@ -22,7 +27,7 @@ func ParseApplyJSON(data []byte) ([]tbx.Concept, error) {
 
 	var payload ApplyPayload
 	if err := dec.Decode(&payload); err != nil {
-		return nil, ErrInvalidInput.Wrap(err)
+		return nil, describeJSONError(err)
 	}
 
 	concepts := make([]tbx.Concept, 0, len(payload.Concepts))
@@ -52,6 +57,9 @@ func WriteResultToConcept(wr *output.WriteResult) tbx.Concept {
 
 	for lang, grp := range wr.Languages {
 		ls := tbx.LangSection{Lang: lang}
+		for _, d := range grp.Definitions {
+			ls.Definitions = append(ls.Definitions, tbx.NoteText{Plain: d})
+		}
 		if grp.Preferred != nil {
 			ls.Terms = append(ls.Terms, WriteTermToTBXTerm(*grp.Preferred, tbx.StatusPreferred))
 		}

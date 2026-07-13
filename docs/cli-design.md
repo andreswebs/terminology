@@ -228,6 +228,10 @@ Read commands:
 
 - `terminology validate` — structural and semantic validation
 - `terminology lookup` — term lookup across languages
+- `terminology search` — reading-aware, normalized-substring discovery finder
+- `terminology export` — emit every concept in the canonical shape (apply-consumable)
+- `terminology show` — emit a single concept by id
+- `terminology list` — enumerate concepts as id + preferred term per language
 - `terminology scan` — find glossary terms in markdown
 - `terminology check` — verify a translated file against a source
 - `terminology extract` — bootstrap candidate terms from a corpus
@@ -302,41 +306,246 @@ terminology lookup TERM [--lang LANG] [--tbx PATH] [--fields LIST]
 
 **Behavior**
 
-Searches for `TERM` as a `<term>` value in any `<termSec>`. Returns matching concept(s).
+Searches for `TERM` as a `<term>` value in any `<termSec>`. Matching is the
+strict exact finder (whole-string, NFC + casefold, term surfaces only); the
+forgiving substring/reading-aware finder is `search`. Returns matching
+concept(s).
 
-**Output (default — lean)**
+**Output**
 
-By default `lookup` emits a minimal projection sufficient to identify the
-concept and recognize its preferred terms per language:
+`lookup` emits each match in the canonical concept shape (identical to
+`export`/`show`): all populated data categories are present — concept- and
+langSec-level `definitions`, `notes`, cross-references, and per-term
+`administrative_status`, morphology, `reading`/`reading_note`, `contexts`, and
+non-preferred (`admitted`/`deprecated`/`superseded`) variants. Keys absent from
+the input TBX are omitted rather than emitted empty.
 
 ```json
 {
+  "schema_version": 1,
   "ok": true,
   "results": [
     {
       "concept_id": "tzimtzum",
       "subject_field": "kabbalah",
       "languages": {
-        "he": { "preferred": { "term": "צמצום" } },
-        "es": { "preferred": { "term": "tzimtzum" } },
-        "en": { "preferred": { "term": "tzimtzum" } }
+        "en": {
+          "preferred": {
+            "term": "tzimtzum",
+            "administrative_status": "preferredTerm-admn-sts",
+            "part_of_speech": "noun"
+          }
+        }
       }
     }
   ]
 }
 ```
 
-Additional fields are opt-in via `--fields`. Examples:
-
-- `--fields definitions,notes` — adds concept-level definitions and notes
-- `--fields languages.*.preferred.part_of_speech,languages.*.preferred.grammatical_gender` — adds morphology
-- `--fields languages.*.deprecated,languages.*.admitted` — adds variants
-
-When opted in, per-term objects carry the supported data categories that are
-populated for that term — keys absent from the input TBX are omitted rather
-than emitted with empty values.
+Use `--fields` to trim the output (e.g. `--fields results.concept_id`,
+`--fields results.languages.*.preferred.term`, `--fields results.definitions`).
 
 **Output (not found)**: `results` is empty array. Exit code 1.
+
+---
+
+### `terminology search QUERY`
+
+Discovery finder: locate concepts by a diacritic- and separator-insensitive
+normalized substring across terms, readings, and the concept id. Where `lookup`
+is the strict exact finder (whole-string, NFC + casefold, term surfaces only),
+`search` is the forgiving one — the natural query is often the romaji a reader
+remembers (`katatedori`), not the stored surface form.
+
+**Synopsis**
+
+```
+terminology search QUERY [--lang LANG] [--include LIST] [--tbx PATH] [--fields LIST]
+```
+
+**Flags**
+
+- `--lang LANG` — restrict the haystack to a single language section (the
+  concept id is always searched regardless).
+- `--include LIST` — comma-separated; widen the haystack beyond the default.
+  Accepted values: `definitions`, `notes`, `contexts`, `subject_field`.
+- `--tbx PATH` — path to TBX file.
+- `--fields LIST` — comma-separated dotted paths to project the output.
+
+**Match semantics**
+
+The query and each candidate field are normalized identically before a
+substring test: NFKD-decompose, drop combining marks (so `ō` folds to `o`),
+keep only letters and numbers (dropping hyphens, spaces, and other
+separators), and case-fold. CJK ideographs and kana survive normalization, so a
+kanji or kana query matches by substring while romaji matches regardless of
+hyphens, spaces, or macrons. There is no edit-distance or scoring: a hit is
+`norm(query)` being a substring of `norm(field)`.
+
+The default haystack is the `concept_id` plus, per language section, each
+term's surface, `reading`, and `reading_note`. `--include` widens it to
+concept- and langSec-level `definitions`, concept- and term-level `notes`, term
+`contexts`, and the `subject_field`.
+
+**Output**
+
+The canonical concept shape (identical to `export`/`show`), a `results` array
+sorted by `concept_id` (per [determinism](adr/determinism.md)):
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "results": [
+    {
+      "concept_id": "katate-dori",
+      "subject_field": "aikido",
+      "languages": {
+        "ja": {
+          "preferred": {
+            "term": "片手取り",
+            "reading": "かたてどり",
+            "reading_note": "katate-dori"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Exit 0 on one or more hits, 1 (`not_found`) when `results` is empty. Search
+normalization is intentionally its own thing, separate from the boundary-aware
+prose matcher in `internal/match` (different job: aggressive folding for
+discovery vs. word-boundary matching over prose).
+
+This command supersedes the stopgap `.local/tmp/terminology-search.py` wrapper.
+
+---
+
+### `terminology export`
+
+Emit every concept in the glossary in the canonical concept shape, sorted by
+`concept_id`. The `concepts` payload is exactly what `apply` ingests, so
+`export` enables a read-modify-write round-trip.
+
+**Synopsis**
+
+```
+terminology export [--lang LANG] [--tbx PATH] [--fields LIST]
+```
+
+**Flags**
+
+- `--lang LANG` — restrict each concept's emitted language sections to this
+  tag. Concepts with no such section still appear, with an empty `languages`
+  object (a stable concept set).
+- `--tbx PATH` — path to TBX file.
+- `--fields LIST` — comma-separated dotted paths to project the output.
+
+**Output**
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "concepts": [
+    {
+      "concept_id": "malkhut",
+      "subject_field": "kabbalah",
+      "definitions": ["The tenth sefirah"],
+      "languages": {
+        "en": {
+          "preferred": {
+            "term": "malkhut",
+            "administrative_status": "preferredTerm-admn-sts"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Empty glossary → exit 0 with `concepts: []`. The output is apply-consumable
+directly:
+
+```bash
+terminology export | terminology apply --file -   # no-op: all unchanged
+```
+
+`apply` also accepts a `jq`-narrowed payload for read-modify-write:
+
+```bash
+terminology export \
+  | jq '{concepts: [.concepts[] | select(.concept_id == "malkhut")]}' \
+  | terminology apply --file -
+```
+
+---
+
+### `terminology show CONCEPT_ID`
+
+Emit a single concept, identified by its id, in the canonical shape.
+
+**Synopsis**
+
+```
+terminology show CONCEPT_ID [--tbx PATH] [--fields LIST]
+```
+
+**Behavior**
+
+Finds the concept whose `id` equals `CONCEPT_ID`. Present → the concept under a
+`concept` key, exit 0. Absent → exit 1 with error code `not_found` (no stdout
+envelope).
+
+**Output**
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "concept": {
+    "concept_id": "malkhut",
+    "subject_field": "kabbalah",
+    "languages": { "en": { "preferred": { "term": "malkhut" } } }
+  }
+}
+```
+
+---
+
+### `terminology list`
+
+Enumerate the glossary as a lean projection: each concept reduced to
+`concept_id`, `subject_field`, and the per-language preferred term only, sorted
+by `concept_id`. It is equivalent to
+`export --fields concept_id,subject_field,languages.*.preferred.term`.
+
+**Synopsis**
+
+```
+terminology list [--lang LANG] [--tbx PATH] [--fields LIST]
+```
+
+**Output**
+
+```json
+{
+  "schema_version": 1,
+  "ok": true,
+  "concepts": [
+    {
+      "concept_id": "malkhut",
+      "subject_field": "kabbalah",
+      "languages": { "en": { "preferred": { "term": "malkhut" } } }
+    }
+  ]
+}
+```
+
+Empty glossary → exit 0 with `concepts: []`.
 
 ---
 

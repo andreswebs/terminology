@@ -5,6 +5,7 @@ import (
 
 	"github.com/andreswebs/terminology/internal/output"
 	"github.com/andreswebs/terminology/internal/tbx"
+	"github.com/andreswebs/terminology/internal/write"
 	urfcli "github.com/urfave/cli/v3"
 )
 
@@ -67,37 +68,12 @@ func lookupAction(_ context.Context, cmd *urfcli.Command) error {
 	return nil
 }
 
-func buildLookupResults(matches []tbx.LookupMatch) []output.LookupResult {
-	results := make([]output.LookupResult, 0, len(matches))
+func buildLookupResults(matches []tbx.LookupMatch) []output.WriteResult {
+	results := make([]output.WriteResult, 0, len(matches))
 	for _, m := range matches {
-		results = append(results, buildLookupResult(m.Concept))
+		results = append(results, write.ConceptToWriteResult(m.Concept))
 	}
 	return results
-}
-
-func buildLookupResult(c tbx.Concept) output.LookupResult {
-	langs := make(map[string]output.LookupTermGroup, len(c.Languages))
-	for tag, ls := range c.Languages {
-		var group output.LookupTermGroup
-		for _, t := range ls.Terms {
-			lt := output.LookupTerm{Term: t.Surface}
-			switch t.AdministrativeStatus {
-			case tbx.StatusPreferred, tbx.StatusUnspecified:
-				group.Preferred = &lt
-			case tbx.StatusAdmitted:
-				group.Admitted = append(group.Admitted, lt)
-			}
-		}
-		if group.Preferred == nil && len(ls.Terms) > 0 {
-			group.Preferred = &output.LookupTerm{Term: ls.Terms[0].Surface}
-		}
-		langs[tag] = group
-	}
-	return output.LookupResult{
-		ConceptID:    c.ID,
-		SubjectField: c.SubjectField,
-		Languages:    langs,
-	}
 }
 
 func lookupNotFound() error {

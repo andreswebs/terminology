@@ -203,6 +203,13 @@ catching 5 broken concepts):
 - The envelope's `error.details.failures` array carries per-concept
   errors.
 
+Malformed JSON payloads on writes (`concept add`, `apply`) are classified
+into a field-level `invalid_input` error carrying an `error.details` object
+(`path`, `expected`, `actual`, `kind`) instead of a single opaque message,
+so an agent can locate and fix the offending field in one pass. The error
+still unwraps to the `invalid_input` sentinel (`errors.Is` and exit code 65
+preserved).
+
 The aggregated shape is declared by the Go struct types in
 `internal/output/types.go` and surfaced via
 [`terminology schema --command apply`](schema-source-of-truth.md#agent-facing-introspection).

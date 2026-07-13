@@ -89,22 +89,28 @@ Pipe to the command: `echo '...' | terminology concept add --tbx glossary.tbx`
 | --------------- | ------------------------------------ | ----------------------------------- | ----------------------------------------------------------------------------- |
 | `concept_id`    | string                               | `id` attribute                      | Overrides ID derivation (see below). Required by `apply`.                     |
 | `subject_field` | string                               | `min:subjectField`                  | Single value.                                                                 |
-| `definitions`   | array of **strings**                 | one `basic:definition` per string   | **Language-neutral.** There is no per-language definition (see limitations).  |
+| `definitions`   | array of **strings**                 | one `basic:definition` per string   | **Language-neutral.** Use `languages.<lang>.definitions` for per-language.    |
 | `notes`         | array of **strings**                 | one `note` per string               | Free text.                                                                    |
 | `cross_refs`    | array of `{ "target", "label" }`     | cross-reference                     | `target` must resolve to an existing concept ID, else `unresolved_crossref`.  |
 
 #### Language section keys
 
-Each language section uses four optional term-group keys:
+Each language section uses one optional definitions key plus four optional
+term-group keys:
 
-| Key          | Shape           | Meaning                                                                                            |
-| ------------ | --------------- | -------------------------------------------------------------------------------------------------- |
-| `preferred`  | object or null  | The single preferred term (`preferredTerm-admn-sts`). At most one per language section.            |
-| `admitted`   | array of object | Tolerated variants (`admittedTerm-admn-sts`); satisfy `check` but warn (or fail under `--strict`). |
-| `deprecated` | array of object | Forbidden variants (`deprecatedTerm-admn-sts`); flagged as `forbidden_variant` by `check`.         |
-| `superseded` | array of object | Historical variants (`supersededTerm-admn-sts`); treated like `deprecated` for verification.       |
+| Key           | Shape                | Meaning                                                                                             |
+| ------------- | -------------------- | -------------------------------------------------------------------------------------------------- |
+| `definitions` | array of **strings** | Language-scoped definitions; one `basic:definition` per string, emitted inside this `langSec`.      |
+| `preferred`   | object or null       | The single preferred term (`preferredTerm-admn-sts`). At most one per language section.             |
+| `admitted`    | array of object      | Tolerated variants (`admittedTerm-admn-sts`); satisfy `check` but warn (or fail under `--strict`).  |
+| `deprecated`  | array of object      | Forbidden variants (`deprecatedTerm-admn-sts`); flagged as `forbidden_variant` by `check`.          |
+| `superseded`  | array of object      | Historical variants (`supersededTerm-admn-sts`); treated like `deprecated` for verification.        |
 
-All four keys are optional and omitted (not null) when empty.
+All keys are optional and omitted (not null) when empty. Per-language
+`definitions` coexist with the concept-level (language-neutral) `definitions`:
+carry an English and a Portuguese definition as
+`languages.en.definitions: ["..."]` and `languages.pt.definitions: ["..."]`,
+each emitted as a `basic:definition` scoped to its `langSec`.
 
 #### Term object keys
 
@@ -155,14 +161,28 @@ Verified element output for a fully populated term:
 #### JSON payload limitations (verified)
 
 - **`definitions` and `notes` are arrays of strings, not objects.** The
-  intuitive `[{ "text": "...", "lang": "en" }]` form is rejected with a generic
-  `invalid_input` / "stdin payload is malformed or unsupported" error that does
-  not name the offending field.
-- **No per-language definitions.** A `definitions` key inside a language section
-  is rejected. Definitions attach only at concept level and are emitted as
-  language-neutral `basic:definition`. To carry an English and a Portuguese
-  definition you must store two untagged strings in the concept-level array.
+  intuitive `[{ "text": "...", "lang": "en" }]` form is rejected with an
+  `invalid_input` error that names the offending field and the expected vs
+  actual type (e.g. `definitions: expected string, got object`). The error
+  envelope's `error.details` carries the structured `path`, `expected`,
+  `actual`, and `kind` (`type_mismatch` | `unknown_field` | `syntax`) so a
+  malformed payload can be fixed in one pass. For `apply`, the path includes
+  the array context (e.g. `concepts.definitions`).
+- **Concept-level fields not in the JSON shape.** Concept-level `graphics`,
+  `customer_subset`, and `project_subset`, and langSec-level `sources`, are not
+  represented in the canonical write/read shape and do not survive a
+  round-trip through it. Edit those with a `--format tbx` fragment instead.
 - **Empty arrays are fine but pointless** - omit rather than send `[]`.
+
+#### Multiple readings (workaround)
+
+There is no repeated `reading` / `reading_note` on a single term: both are
+scalar strings holding one reading each. To record an alternate reading for the
+same surface form, add it as a separate **admitted** term in the same language
+section (it will be surfaced by `lookup`, and by the forthcoming search/show/
+export read commands), or stash the extra reading in `reading_note` or a
+`notes` entry. This keeps the canonical shape simple while still capturing the
+alternate reading for retrieval.
 
 ### 3. TBX fragment stdin
 
@@ -177,12 +197,21 @@ Rejected forms:
 
 Pipe to the command: `cat fragment.xml | terminology concept add --tbx glossary.tbx`
 
-> **Caveat - lossy parser.** The fragment reader currently extracts only
-> `<term>` surface forms. Child elements such as
-> `<descrip type="definition">` and `<termNote type="administrativeStatus">`
-> are **silently discarded**, and the command still returns `ok:true` with
-> exit 0. Prefer the JSON stdin path for any concept that carries definitions,
-> statuses, readings, or notes. See `issues.md` (BUG-1).
+Both encoding styles are accepted and round-trip in full:
+
+- **DCT (namespaced)** - `<basic:definition>`, `<min:administrativeStatus>`,
+  `<ling:reading>`, and the other namespaced elements.
+- **DCA (generic carriers)** - `<descrip type="definition">`,
+  `<termNote type="administrativeStatus">`, `<admin type="...">`, and so on.
+
+The style is auto-detected from the fragment's elements; definitions,
+administrative statuses, readings, and notes are all preserved regardless of
+style. Input is always normalized to canonical DCT on disk.
+
+> **Fails closed on unsupported input.** Any element the reader cannot map is
+> never silently dropped. The command fails with exit 65 and an
+> `invalid_input` error whose message names the offending element(s), leaving
+> the glossary file untouched.
 
 ## Concept ID derivation
 
@@ -275,9 +304,10 @@ validation still runs, so `--dry-run` surfaces errors that would block the
 real write.
 
 Note: the result envelope echoed by a write reflects the parsed input, not the
-file. It is not a substitute for reading the file back, and no read command
-(`lookup`) currently surfaces definitions, readings, notes, or contexts. See
-`issues.md` (FEAT-2).
+file. To read a write back from disk, use `show <id>` (single concept),
+`export` (whole glossary), or `lookup <term>` -- all three emit the canonical
+concept shape, so definitions, readings, notes, contexts, and non-preferred
+variants are fully readable.
 
 ## Apply patch model
 

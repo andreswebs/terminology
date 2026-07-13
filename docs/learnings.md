@@ -647,3 +647,156 @@
 - `make perf` uses `-count=1` to disable test caching (perf tests should always re-run) and `-v` to show timing output from `t.Logf`.
 - Perf test files use `_test` package suffix (e.g. `package tbx_test`) to test through the public API, consistent with the project's test convention. Fixture generators are local to each test file since they need package-specific types.
 - The `check` budget (10s) is roughly 2× the `scan` budget (5s) because check runs two scans (source + target) plus violation analysis. The actual ratio is less than 2× due to shared overhead (glossary loading, goldmark parsing).
+
+## BUG-1 (ter-po3t) — TBX fragment silently dropped definitions/statuses
+
+- Root cause was two independent defects: the fragment shell in `write.go`
+  hardcoded `style="dct"`, so DCA fragments (`<descrip>`, `<termNote>`) hit the
+  DCT reader's `default:` branch and were `skip()`ed; and `ParseTBXFragment`
+  discarded the reader's `[]tbx.Warning`, so the `unknown_element` warnings that
+  flagged the drop never reached the caller (`ok:true`, exit 0).
+- Fix: `detectFragmentStyle(data)` scans start-element local names for the
+  DCA-only generic carriers (`descrip`, `termNote`, `admin`, `adminNote`, `ref`,
+  `xref`, `transac`, `transacNote`) and picks `StyleDCA`; `wrapInTBXShell` now
+  takes the style and emits the matching `style=` attribute, letting the
+  existing `dialectDCA` map the carriers with zero reader changes.
+- Fail-closed: capture the reader warnings; any `unknown_element` → return an
+  `invalid_input`-coded error naming the element(s).
+- Key gotcha: `terr.E.Error()` returns only the static sentinel message, and
+  `output.EmitError` renders `coded.Error()` (never the wrapped cause). So
+  `ErrInvalidInput.Wrap(cause)` does NOT surface the element name to the
+  agent — `.Wrap` is invisible in the envelope. Use `terr.Newf(code, exit, hint,
+  ...)` with a dynamic message (reusing `ErrInvalidInput.Code/ExitCode/Hint`) to
+  actually name the offending element. (This is the same message-visibility gap
+  GAP-2/ter-2mia addresses for the JSON path.)
+- Both `concept add` and `apply` funnel through `ParseTBXFragment`, so the fix
+  applies to both with no caller signature change.
+
+## GAP-2 (ter-2mia) — JSON payload errors now name the offending field
+
+- The message-visibility gap noted at the end of BUG-1 applies here: `terr.E.Error()`
+  returns only the static sentinel message and `output.EmitError` renders
+  `coded.Error()`, so `ErrInvalidInput.Wrap(jsonErr)` discarded everything
+  `encoding/json` already knew. The fix is a dedicated error type, not a `.Wrap`.
+- `InvalidInputError` (in `src/internal/write/jsonerr.go`) implements `terr.Coded`
+  (reusing `ErrInvalidInput`'s code/exit/hint) + `output.Detailed` (returns a
+  `FieldError`), and its `Unwrap()` returns the `ErrInvalidInput` sentinel — that
+  is what keeps `errors.Is(err, ErrInvalidInput)` true and exit 65 intact while
+  swapping in a dynamic message. `EmitError`'s `errors.As(err, &coded)` stops at
+  `InvalidInputError` (matched first), so the specific message wins over the
+  sentinel's static one.
+- `describeJSONError` classifies via `errors.As`: `*json.UnmarshalTypeError` →
+  `type_mismatch` (path from `.Field`, expected from a reflect.Kind→friendly-name
+  mapper, actual from `.Value`); `*json.SyntaxError` → `syntax` (with `.Offset`).
+  Two gotchas found by probing stdlib: (1) truncated input like `{` surfaces as
+  `io.ErrUnexpectedEOF`, NOT `*json.SyntaxError`, so both (plus `io.EOF`) must be
+  caught for the syntax bucket; (2) `DisallowUnknownFields` has no typed error —
+  match the stable `json: unknown field "<name>"` prefix and extract the name.
+- `json.UnmarshalTypeError.Field` does NOT carry the array index: a nested apply
+  failure yields `Field == "concepts.definitions"`, not `concepts[0].definitions`.
+  Surfaced as-is; reconstructing `[N]` would require re-parsing against the byte
+  offset (the ticket's explicit nice-to-have, deferred).
+- Adding a non-registered error type (vs a `terr.New` sentinel) leaves the
+  reflective `terminology schema` output unchanged, so the schema golden files did
+  NOT need regeneration — only `testdata/apply/invalid_json` (its fixture is a real
+  syntax error, now named). Contrast with sentinel additions (E6.T2) which force
+  schema golden updates.
+
+## FEAT-1 ter-nfsv — canonical concept read serializer + per-language definitions
+
+- The `Concept`→`WriteResult` serializer now lives once in package `write`
+  (`ConceptToWriteResult` / `TermToWriteTerm` in `serialize.go`), with the
+  inverse (`WriteResultToConcept` / `WriteTermToTBXTerm`) beside it in
+  `apply.go`. Both directions in one package means future read commands
+  (export/show/list) import one canonical serializer instead of reaching into
+  `commands`. `commands.buildWriteResult` is now a one-line delegator; the old
+  `commands.tbxTermToWriteTerm` was removed. No import cycle: `write` imports
+  only `output` + `tbx`, and `commands` already sits above `write`.
+- Per-language definitions (FEAT-1) are an additive sibling key
+  `languages.<lang>.definitions: [string]` on `output.WriteTermGroup`, coexisting
+  with concept-level (language-neutral) `definitions`. Placed as the first field
+  of `WriteTermGroup` so the JSON emits `definitions` before the term groups. The
+  reader/writer already handled langSec-level `<basic:definition>`
+  (`LangSection.Definitions`); the only gap was the JSON I/O struct, so wiring
+  was one line in each direction.
+- Adding a field to `WriteTermGroup` changes the reflective `terminology schema`
+  output → regenerate with `go test ./internal/app/ -run TestSchema_Full_Golden
+  -update`. Only the full schema golden changed (the field appears under the
+  `WriteTermGroup` envelope children); the per-command filter golden was
+  unaffected since no command/flag/sentinel changed.
+- Round-trip losslessness is asserted with the existing `ConceptsEqual`
+  (canonical-DCT-writer bytes, transacGrp stripped). Decision on concept-level
+  fields absent from `WriteResult` (`Graphics`, `CustomerSubset`, `ProjectSubset`,
+  and langSec `Sources`): **documented as omitted**, not added — keeps the
+  canonical shape lean; those are editable via `--format tbx` fragments. The
+  Cycle-4 round-trip test therefore deliberately excludes them.
+- FEAT-4 (multiple readings) stays deferred: `reading`/`reading_note` remain
+  scalar. Documented workaround in `write-details.md`: represent an alternate
+  reading as an *admitted* term, or stash it in `reading_note`/`notes`.
+
+## FEAT-5 ter-2d5b — search command (reading-aware normalized-substring finder)
+
+- `search` is a new discovery finder distinct from `lookup`: `tbx.Search` +
+  `foldForSearch` live in `internal/tbx/search.go`, mirroring `lookup.go`'s
+  file/style. `foldForSearch` ports the reference `terminology-search.py`
+  `norm()`: NFKD → drop `unicode.Mn` combining marks (macron→base) → keep
+  `unicode.IsLetter || unicode.IsNumber` (so CJK/kana survive, hyphens/spaces
+  drop) → `cases.Fold()`. A hit is `strings.Contains(foldForSearch(field),
+  foldForSearch(query))`. No edit-distance, no scoring; results sorted by ID.
+- Default haystack = `concept_id` + per-langSec term `Surface`/`Reading`/
+  `ReadingNote`. `--include` (validated against
+  `definitions,notes,contexts,subject_field`) widens it; concept-level `notes`
+  and `definitions` plus term-level `notes`/`contexts` are all gated behind
+  `Include`. `concept_id` is always searched even under `--lang`.
+- The command emits the canonical `output.WriteResult` shape via
+  `write.ConceptToWriteResult` (foundation FEAT-1), reusing `lookupNotFound()`
+  (code `not_found`, exit 1) for zero hits — no new not-found error type needed.
+- The `--include` flag is a plain `StringFlag` whose `Validator` splits on comma
+  and rejects unknown values with `urfcli.Exit(..., 2)` (exit 2, `invalid_value`
+  via `classifyUsageError`). `splitInclude` is the single comma-parser reused by
+  both the validator and the action.
+- Registering `SearchEnvelope` + exit codes in `output/types.go` `init()`
+  changed the reflective schema output → regenerate both `TestSchema_Full_Golden`
+  and `TestSchema_CommandFilter_Golden` with `-update` (same pattern as every
+  prior envelope addition).
+- New golden fixture `testdata/fixtures/aikido-dct.tbx` uses the bundle model
+  (kanji `<term>`, hiragana `<ling:reading>`, romaji `<ling:readingNote>` inside
+  `<adminGrp>`). Verified `katatedori`/`かたてどり`/`片手取り`/`grab`/`kokyu`→`kokyū`
+  all resolve; `search grab --lang ja` → exit 1 (en-only match excluded).
+- The env markdownlint config (`~/.markdownlint.yaml`) is absent in this
+  sandbox; the repo's real config relaxes MD013/MD040 (existing docs have
+  276-char lines and bare ` ``` ` synopsis fences). Matched the established doc
+  style (prose wrapped ~78, bare-fence synopses) rather than default rules.
+
+## FEAT-2/FEAT-3 ter-lutz — round-trip read commands (export/show/list + lookup upgrade)
+
+- All four surfaces emit the one canonical concept shape via
+  `write.ConceptToWriteResult` (the FEAT-1 serializer). `export`/`list` build
+  `[]WriteResult` from `g.Concepts` and **must sort by `concept_id`** —
+  `g.Concepts` is in TBX document order, not sorted (only the canonical writer
+  sorts). Shared helpers live in `commands/read_helpers.go`
+  (`conceptsToResults`, `restrictLang`, `reduceToPreferred`).
+- **`export | apply --file -` no-op gotcha:** `apply`'s `ApplyPayload` uses
+  `json.Decoder.DisallowUnknownFields()`, so the full export envelope
+  (`schema_version` + `ok` + `concepts`) was rejected with `unknown field "ok"`.
+  Fix: add ignored `SchemaVersion int` / `OK bool` fields to `ApplyPayload` so
+  the envelope pipes straight in. Acceptance criterion "export | apply --file -
+  is a no-op (all unchanged)" depends on this — without it agents must `jq` out
+  just `{concepts}` first.
+- `list` is a projection, not a new schema: `reduceToPreferred` rebuilds each
+  `WriteTermGroup` with only `Preferred{Term}` (drops admitted/deprecated,
+  morphology, definitions). Because `WriteTerm.AdministrativeStatus` is
+  `omitempty`, a preferred term with only `Surface` set emits `{"term":"..."}`.
+- `show <missing>` returns `lookupNotFound()` (code `not_found`, exit 1) and
+  emits **no** stdout envelope — a missing single concept has nothing to show.
+  This differs from `lookup`/`search` zero-hit, which still emit `results:[]`
+  to stdout before the exit-1 error.
+- Breaking `LookupEnvelope.Results` from `[]LookupResult` to `[]WriteResult`
+  retired `LookupResult`/`LookupTermGroup`/`LookupTerm`. Their `output/types_test.go`
+  unit tests were replaced with `ExportEnvelope`/`ShowEnvelope`/`ListEnvelope`
+  nil-normalization tests. Regenerated: 3 lookup goldens + `TestSchema_Full_Golden`
+  (new envelopes/commands change reflective schema; command-filter golden was
+  unaffected since it targets a specific pre-existing command).
+- `show` uses a positional `concept-id` arg (`StringArg` + `argBounds(1,1)`) and
+  `sanitizeConceptID` (not `sanitizeID` — no such function; the ID sanitizer is
+  `sanitizeConceptID`, as used by concept update/remove).

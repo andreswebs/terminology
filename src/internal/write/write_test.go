@@ -3,6 +3,7 @@ package write
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/andreswebs/terminology/internal/tbx"
@@ -374,5 +375,106 @@ func TestExecute_HappyPath_SavesAndReturnsAffectedConcept(t *testing.T) {
 	}
 	if len(g.Concepts) != 2 {
 		t.Errorf("got %d concepts, want 2", len(g.Concepts))
+	}
+}
+
+func TestParseTBXFragment_DCA_PersistsDefinitionAndStatus(t *testing.T) {
+	input := `<conceptEntry id="irimi-nage">
+  <descrip type="subjectField">aikido</descrip>
+  <langSec xml:lang="en">
+    <descrip type="definition">Nage enters past uke to throw.</descrip>
+    <termSec>
+      <term>entering throw</term>
+      <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+    </termSec>
+  </langSec>
+</conceptEntry>`
+
+	concepts, err := ParseTBXFragment([]byte(input))
+	if err != nil {
+		t.Fatalf("ParseTBXFragment: %v", err)
+	}
+	if len(concepts) != 1 {
+		t.Fatalf("got %d concepts, want 1", len(concepts))
+	}
+
+	c := concepts[0]
+	if c.SubjectField != "aikido" {
+		t.Errorf("SubjectField = %q, want %q", c.SubjectField, "aikido")
+	}
+
+	ls, ok := c.Languages["en"]
+	if !ok {
+		t.Fatalf("expected en language section")
+	}
+	if len(ls.Definitions) != 1 || ls.Definitions[0].Plain != "Nage enters past uke to throw." {
+		t.Errorf("langSec definitions = %+v, want one entry %q", ls.Definitions, "Nage enters past uke to throw.")
+	}
+	if len(ls.Terms) != 1 {
+		t.Fatalf("got %d terms, want 1", len(ls.Terms))
+	}
+	if ls.Terms[0].Surface != "entering throw" {
+		t.Errorf("term surface = %q, want %q", ls.Terms[0].Surface, "entering throw")
+	}
+	if ls.Terms[0].AdministrativeStatus != tbx.StatusPreferred {
+		t.Errorf("term status = %v, want StatusPreferred", ls.Terms[0].AdministrativeStatus)
+	}
+}
+
+func TestParseTBXFragment_DCT_PersistsDefinitionAndStatus(t *testing.T) {
+	input := `<conceptEntry id="irimi-nage">
+  <min:subjectField>aikido</min:subjectField>
+  <langSec xml:lang="en">
+    <basic:definition>Nage enters past uke to throw.</basic:definition>
+    <termSec>
+      <term>entering throw</term>
+      <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+    </termSec>
+  </langSec>
+</conceptEntry>`
+
+	concepts, err := ParseTBXFragment([]byte(input))
+	if err != nil {
+		t.Fatalf("ParseTBXFragment: %v", err)
+	}
+	if len(concepts) != 1 {
+		t.Fatalf("got %d concepts, want 1", len(concepts))
+	}
+
+	c := concepts[0]
+	if c.SubjectField != "aikido" {
+		t.Errorf("SubjectField = %q, want %q", c.SubjectField, "aikido")
+	}
+	ls := c.Languages["en"]
+	if len(ls.Definitions) != 1 || ls.Definitions[0].Plain != "Nage enters past uke to throw." {
+		t.Errorf("langSec definitions = %+v, want one entry", ls.Definitions)
+	}
+	if len(ls.Terms) != 1 || ls.Terms[0].AdministrativeStatus != tbx.StatusPreferred {
+		t.Errorf("term status not preserved: %+v", ls.Terms)
+	}
+}
+
+func TestParseTBXFragment_UnknownElement_FailsClosed(t *testing.T) {
+	input := `<conceptEntry id="x">
+  <langSec xml:lang="en">
+    <descrip type="madeUpThing">nonsense</descrip>
+    <termSec><term>x</term></termSec>
+  </langSec>
+</conceptEntry>`
+
+	_, err := ParseTBXFragment([]byte(input))
+	if err == nil {
+		t.Fatal("expected error for unknown element, got nil")
+	}
+
+	coded, ok := err.(interface{ Code() string })
+	if !ok {
+		t.Fatalf("expected terr.Coded, got %T", err)
+	}
+	if coded.Code() != "invalid_input" {
+		t.Errorf("got code %q, want %q", coded.Code(), "invalid_input")
+	}
+	if !strings.Contains(err.Error(), "madeUpThing") {
+		t.Errorf("error message %q does not name the offending element", err.Error())
 	}
 }

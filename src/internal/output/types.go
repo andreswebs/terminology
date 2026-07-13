@@ -15,6 +15,10 @@ func init() {
 	RegisterEnvelope("term deprecate", WriteEnvelope{})
 	RegisterEnvelope("apply", ApplyEnvelope{})
 	RegisterEnvelope("init", InitEnvelope{})
+	RegisterEnvelope("search", SearchEnvelope{})
+	RegisterEnvelope("export", ExportEnvelope{})
+	RegisterEnvelope("show", ShowEnvelope{})
+	RegisterEnvelope("list", ListEnvelope{})
 
 	RegisterExitCodes("validate", []int{0, 1, 2, 3, 65})
 	RegisterExitCodes("lookup", []int{0, 1, 2, 3, 65})
@@ -29,6 +33,10 @@ func init() {
 	RegisterExitCodes("term deprecate", []int{0, 2, 3, 65})
 	RegisterExitCodes("apply", []int{0, 1, 2, 3, 65})
 	RegisterExitCodes("init", []int{0, 2, 3, 65})
+	RegisterExitCodes("search", []int{0, 1, 2, 3, 65})
+	RegisterExitCodes("export", []int{0, 2, 3, 65})
+	RegisterExitCodes("show", []int{0, 1, 2, 3, 65})
+	RegisterExitCodes("list", []int{0, 2, 3, 65})
 }
 
 type ValidateEnvelope struct {
@@ -47,25 +55,14 @@ type ValidateWarning struct {
 	Col       int    `json:"column,omitempty"`
 }
 
+// LookupEnvelope carries the results of the strict exact `lookup` finder. Each
+// result is the canonical WriteResult concept shape shared by every read and
+// write command, so a lookup hit exposes the same rich fields (definitions,
+// readings, contexts, non-preferred variants) that `export`/`show` emit.
 type LookupEnvelope struct {
-	SchemaVersion int            `json:"schema_version"`
-	OK            bool           `json:"ok"`
-	Results       []LookupResult `json:"results"`
-}
-
-type LookupResult struct {
-	ConceptID    string                     `json:"concept_id"`
-	SubjectField string                     `json:"subject_field,omitempty"`
-	Languages    map[string]LookupTermGroup `json:"languages"`
-}
-
-type LookupTermGroup struct {
-	Preferred *LookupTerm  `json:"preferred,omitempty"`
-	Admitted  []LookupTerm `json:"admitted,omitempty"`
-}
-
-type LookupTerm struct {
-	Term string `json:"term"`
+	SchemaVersion int           `json:"schema_version"`
+	OK            bool          `json:"ok"`
+	Results       []WriteResult `json:"results"`
 }
 
 type ExtractEnvelope struct {
@@ -100,7 +97,7 @@ func (e LookupEnvelope) MarshalJSON() ([]byte, error) {
 	type Alias LookupEnvelope
 	a := Alias(e)
 	if a.Results == nil {
-		a.Results = []LookupResult{}
+		a.Results = []WriteResult{}
 	}
 	return json.Marshal(a)
 }
@@ -198,10 +195,11 @@ type WriteCrossRef struct {
 }
 
 type WriteTermGroup struct {
-	Preferred  *WriteTerm  `json:"preferred,omitempty"`
-	Admitted   []WriteTerm `json:"admitted,omitempty"`
-	Deprecated []WriteTerm `json:"deprecated,omitempty"`
-	Superseded []WriteTerm `json:"superseded,omitempty"`
+	Definitions []string    `json:"definitions,omitempty"`
+	Preferred   *WriteTerm  `json:"preferred,omitempty"`
+	Admitted    []WriteTerm `json:"admitted,omitempty"`
+	Deprecated  []WriteTerm `json:"deprecated,omitempty"`
+	Superseded  []WriteTerm `json:"superseded,omitempty"`
 }
 
 type WriteTerm struct {
@@ -272,6 +270,74 @@ func (e ApplyEnvelope) MarshalJSON() ([]byte, error) {
 	}
 	if a.Warnings == nil {
 		a.Warnings = []string{}
+	}
+	return json.Marshal(a)
+}
+
+type SearchEnvelope struct {
+	SchemaVersion int           `json:"schema_version"`
+	OK            bool          `json:"ok"`
+	Results       []WriteResult `json:"results"`
+}
+
+func (e SearchEnvelope) MarshalJSON() ([]byte, error) {
+	type Alias SearchEnvelope
+	a := Alias(e)
+	if a.Results == nil {
+		a.Results = []WriteResult{}
+	}
+	return json.Marshal(a)
+}
+
+// ExportEnvelope carries the full glossary as canonical concepts, sorted by
+// concept id. The `concepts` payload is exactly what `apply` ingests, enabling
+// a read-modify-write round-trip.
+type ExportEnvelope struct {
+	SchemaVersion int           `json:"schema_version"`
+	OK            bool          `json:"ok"`
+	Concepts      []WriteResult `json:"concepts"`
+}
+
+func (e ExportEnvelope) MarshalJSON() ([]byte, error) {
+	type Alias ExportEnvelope
+	a := Alias(e)
+	if a.Concepts == nil {
+		a.Concepts = []WriteResult{}
+	}
+	return json.Marshal(a)
+}
+
+// ShowEnvelope carries a single concept in the canonical shape.
+type ShowEnvelope struct {
+	SchemaVersion int         `json:"schema_version"`
+	OK            bool        `json:"ok"`
+	Concept       WriteResult `json:"concept"`
+}
+
+func (e ShowEnvelope) MarshalJSON() ([]byte, error) {
+	type Alias ShowEnvelope
+	a := Alias(e)
+	if a.Concept.Languages == nil {
+		a.Concept.Languages = make(map[string]WriteTermGroup)
+	}
+	return json.Marshal(a)
+}
+
+// ListEnvelope is the projected enumeration: each concept carries only its id,
+// subject field, and per-language preferred term. It is the canonical concept
+// element reduced to the fields `export --fields concept_id,subject_field,
+// languages.*.preferred.term` would keep.
+type ListEnvelope struct {
+	SchemaVersion int           `json:"schema_version"`
+	OK            bool          `json:"ok"`
+	Concepts      []WriteResult `json:"concepts"`
+}
+
+func (e ListEnvelope) MarshalJSON() ([]byte, error) {
+	type Alias ListEnvelope
+	a := Alias(e)
+	if a.Concepts == nil {
+		a.Concepts = []WriteResult{}
 	}
 	return json.Marshal(a)
 }

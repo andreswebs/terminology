@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dct" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2" xmlns:min="http://www.tbxinfo.net/ns/min" xmlns:basic="http://www.tbxinfo.net/ns/basic" xmlns:ling="http://www.tbxinfo.net/ns/linguist">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Aikido test glossary</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="katate-dori">
+        <min:subjectField>aikido</min:subjectField>
+        <basic:definition>A one-handed grab of the wrist.</basic:definition>
+        <langSec xml:lang="ja">
+          <termSec>
+            <term>片手取り</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <adminGrp>
+              <ling:reading>かたてどり</ling:reading>
+              <ling:readingNote>katate-dori</ling:readingNote>
+            </adminGrp>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>single hand grab</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="kokyu-ho">
+        <min:subjectField>aikido</min:subjectField>
+        <langSec xml:lang="ja">
+          <termSec>
+            <term>呼吸法</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+            <adminGrp>
+              <ling:reading>こきゅうほう</ling:reading>
+              <ling:readingNote>kokyū-ho</ling:readingNote>
+            </adminGrp>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="en">
+          <termSec>
+            <term>breathing method</term>
+            <min:administrativeStatus>preferredTerm-admn-sts</min:administrativeStatus>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"strings"
 
 	"github.com/andreswebs/terminology/internal/output"
 	"github.com/andreswebs/terminology/internal/tbx"
@@ -69,19 +70,72 @@ func ParseTBXFragment(data []byte) ([]tbx.Concept, error) {
 		)
 	}
 
-	wrapped := wrapInTBXShell(data, rootName)
+	wrapped := wrapInTBXShell(data, rootName, detectFragmentStyle(data))
 
 	r, err := tbx.ReaderForDialect(tbx.DialectLinguist)
 	if err != nil {
 		return nil, fmt.Errorf("getting reader: %w", err)
 	}
 
-	g, _, err := r.Decode(bytes.NewReader(wrapped))
+	g, warnings, err := r.Decode(bytes.NewReader(wrapped))
 	if err != nil {
 		return nil, ErrInvalidInput.Wrap(err)
 	}
 
+	// Fail closed: never report success after silently discarding recognized
+	// input. An unknown_element warning means the reader skipped an element it
+	// could not map, so reject the fragment naming the offending element(s).
+	if dropped := unknownElements(warnings); len(dropped) > 0 {
+		return nil, terr.Newf(
+			ErrInvalidInput.Code(), ErrInvalidInput.ExitCode(), ErrInvalidInput.Hint(),
+			"unsupported element(s) in fragment: %s", strings.Join(dropped, "; "),
+		)
+	}
+
 	return g.Concepts, nil
+}
+
+// dcaCarrierElements are the generic carrier element local-names used only in
+// DCA-style TBX (DCT uses namespaced elements such as basic:definition). Their
+// presence in a fragment signals DCA input.
+var dcaCarrierElements = map[string]bool{
+	"descrip":     true,
+	"termNote":    true,
+	"admin":       true,
+	"adminNote":   true,
+	"ref":         true,
+	"xref":        true,
+	"transac":     true,
+	"transacNote": true,
+}
+
+// detectFragmentStyle inspects a raw fragment and reports whether it is encoded
+// in DCA (generic carrier elements) or DCT (namespaced elements) style.
+func detectFragmentStyle(data []byte) tbx.Style {
+	dec := xml.NewDecoder(bytes.NewReader(data))
+	dec.Strict = true
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		if se, ok := tok.(xml.StartElement); ok && dcaCarrierElements[se.Name.Local] {
+			return tbx.StyleDCA
+		}
+	}
+	return tbx.StyleDCT
+}
+
+// unknownElements returns the messages of any unknown_element warnings, which
+// already name the dropped element (e.g. `unknown element <descrip type="x">`).
+func unknownElements(warnings []tbx.Warning) []string {
+	var dropped []string
+	for _, w := range warnings {
+		if w.Code == "unknown_element" {
+			dropped = append(dropped, w.Message)
+		}
+	}
+	return dropped
 }
 
 func firstElementName(data []byte) (string, error) {
@@ -101,8 +155,8 @@ func firstElementName(data []byte) (string, error) {
 	}
 }
 
-const tbxShellPrefix = `<?xml version="1.0" encoding="UTF-8"?>
-<tbx type="TBX-Linguist" style="dct" xml:lang="en"
+const tbxShellPrefixFmt = `<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="%s" xml:lang="en"
      xmlns="urn:iso:std:iso:30042:ed-2"
      xmlns:min="http://www.tbxinfo.net/ns/min"
      xmlns:basic="http://www.tbxinfo.net/ns/basic"
@@ -121,9 +175,14 @@ const tbxShellSuffix = `
   </text>
 </tbx>`
 
-func wrapInTBXShell(fragment []byte, rootName string) []byte {
+func wrapInTBXShell(fragment []byte, rootName string, style tbx.Style) []byte {
+	styleAttr := "dct"
+	if style == tbx.StyleDCA {
+		styleAttr = "dca"
+	}
+
 	var buf bytes.Buffer
-	buf.WriteString(tbxShellPrefix)
+	fmt.Fprintf(&buf, tbxShellPrefixFmt, styleAttr)
 
 	if rootName == "conceptEntryList" {
 		buf.Write(extractListInner(fragment))
@@ -175,7 +234,7 @@ func ParseJSONInput(data []byte) (*output.WriteResult, error) {
 
 	var result output.WriteResult
 	if err := dec.Decode(&result); err != nil {
-		return nil, ErrInvalidInput.Wrap(err)
+		return nil, describeJSONError(err)
 	}
 	return &result, nil
 }

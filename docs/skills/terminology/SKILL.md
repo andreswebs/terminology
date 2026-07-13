@@ -52,7 +52,7 @@ Capture pattern: `terminology ... 2>err.json` — stdout has results, stderr has
 | Code | Meaning                                                      | When                                                                                                               |
 | ---- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | 0    | Success                                                      | All commands                                                                                                       |
-| 1    | Warnings / no results / violations / apply validation failed | validate (warnings), lookup (not found), extract (no candidates), check (violations), apply (per-concept failures) |
+| 1    | Warnings / no results / violations / apply validation failed | validate (warnings), lookup / search / show (not found), extract (no candidates), check (violations), apply (per-concept failures) |
 | 2    | Usage error                                                  | All commands (bad flags, missing args, mutex violations)                                                           |
 | 3    | I/O error                                                    | scan, check, extract, apply (file not found, locked)                                                               |
 | 65   | Validation / data error                                      | validate (bad TBX, strict errors), write commands, apply (invalid_input, dangling_crossref)                        |
@@ -121,9 +121,55 @@ terminology lookup "algorithm" --tbx glossary.tbx
 terminology lookup "algorithm" --tbx glossary.tbx --lang en --fields results.concept_id
 ```
 
-- Case-insensitive + NFC normalization matching
+- Case-insensitive + NFC normalization matching (strict exact finder)
 - `--lang` restricts which language sections are searched
+- Output is the canonical concept shape (same as `show`/`export`): definitions,
+  readings, contexts, notes, and non-preferred variants are all present
 - Not found → exit 1, `ok:true`, `results:[]`
+
+### search
+
+Discovery finder: reading-aware, normalized-substring matching. Use it when
+`lookup` returns nothing because the query is a romaji/kana transliteration
+stored as a `reading`/`reading_note`, or differs by hyphens, spaces, or
+macrons.
+
+```sh
+terminology search "katatedori" --tbx glossary.tbx   # matches reading_note "katate-dori"
+terminology search "かたてどり" --tbx glossary.tbx     # matches a hiragana reading
+terminology search "grab" --tbx glossary.tbx --include definitions
+```
+
+- Normalized substring: NFKD, drop combining marks (macron→base), drop
+  hyphens/spaces, casefold; CJK/kana preserved. No edit-distance, no scoring.
+- Default haystack: `concept_id` + per-language term surfaces + `reading` +
+  `reading_note`. `--include` widens to `definitions`, `notes`, `contexts`,
+  `subject_field`.
+- `--lang` restricts the searched language sections (id always searched).
+- Output is the canonical concept shape, sorted by `concept_id`; not found →
+  exit 1, `ok:true`, `results:[]`.
+- Contrast with `lookup` (strict exact) and `scan` (prose matcher).
+
+### export / show / list
+
+Round-trip read commands, all emitting the canonical concept shape.
+
+```sh
+terminology export --tbx glossary.tbx                 # every concept, sorted by id
+terminology export --tbx glossary.tbx --lang he       # only the he language sections
+terminology show malkhut --tbx glossary.tbx           # one concept by id
+terminology list --tbx glossary.tbx                   # id + preferred term per language
+```
+
+- `export` output is apply-consumable: `terminology export | terminology apply
+  --file -` is a no-op, so it anchors a read-modify-write loop (narrow with
+  `jq` between the two).
+- `show <id>` present → concept under `concept`, exit 0; absent → exit 1
+  `not_found` (no stdout envelope).
+- `list` is the lean projection (id + `subject_field` + per-language preferred
+  term only) == `export --fields concept_id,subject_field,languages.*.preferred.term`.
+- `--fields` projection works on all three; empty glossary → exit 0 with
+  `concepts: []`.
 
 ### schema
 

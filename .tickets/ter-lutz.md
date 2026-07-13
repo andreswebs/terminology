@@ -1,6 +1,6 @@
 ---
 id: ter-lutz
-status: open
+status: closed
 deps: [ter-nfsv]
 links: []
 created: 2026-07-12T11:51:37Z
@@ -253,3 +253,15 @@ Depends on the **foundation ticket (FEAT-A)** for
 `write.ConceptToWriteResult` and the finalized canonical shape (including
 per-language definitions).
 
+
+## Notes
+
+**2026-07-13T17:32:13Z**
+
+Implemented FEAT-2/FEAT-3 read surface: export, show, list commands + upgraded lookup to the canonical WriteResult concept shape (write.ConceptToWriteResult).
+
+New: internal/app/commands/{export,show,list}.go + read_helpers.go (conceptsToResults sorts by id; restrictLang for --lang; reduceToPreferred for list). Envelopes ExportEnvelope/ShowEnvelope/ListEnvelope in output/types.go with nil-normalizing MarshalJSON; registered envelopes+exit codes (export/list {0,2,3,65}, show {0,1,2,3,65}). Registered commands in app/root.go.
+
+BREAKING: LookupEnvelope.Results is now []output.WriteResult (removed LookupResult/LookupTermGroup/LookupTerm); lookup goldens + TestSchema_Full_Golden regenerated. lookup --fields results.definitions now valid.
+
+Key detail: ApplyPayload gained ignored schema_version+ok fields so the full export envelope pipes straight into apply (DisallowUnknownFields would otherwise reject them) — 'export | apply --file -' is a verified no-op (all unchanged). show absent = exit 1 not_found with NO stdout envelope (reuses lookupNotFound()). New fixture minimal-empty.tbx for empty-glossary exit-0 tests. Docs: cli-design.md (surface + export/show/list sections + rewritten lookup output), SKILL.md, write-details.md (dropped the FEAT-2 'unreadable' claim). make build green.

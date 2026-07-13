@@ -1,6 +1,6 @@
 ---
 id: ter-2d5b
-status: open
+status: closed
 deps: [ter-nfsv]
 links: []
 created: 2026-07-12T11:51:38Z
@@ -238,3 +238,9 @@ Depends on the **foundation ticket (FEAT-A)** for
 `write.ConceptToWriteResult` (search results emit the canonical concept shape).
 Independent of the read-commands ticket (FEAT-B).
 
+
+## Notes
+
+**2026-07-13T17:21:38Z**
+
+Implemented the search command (FEAT-5). New: internal/tbx/search.go (Search, SearchOptions, foldForSearch) + search_test.go; internal/app/commands/search.go (command, --include flag validated against definitions,notes,contexts,subject_field, --lang, --fields); output.SearchEnvelope + registration; registered in app/root.go. Emits canonical write.ConceptToWriteResult shape, results sorted by concept_id, zero hits -> exit 1 not_found (reuses lookupNotFound). foldForSearch mirrors terminology-search.py norm(): NFKD, drop combining marks (macron fold), keep letters/numbers (CJK/kana survive, hyphens/spaces dropped), casefold; matching is substring. Docs: cli-design.md + SKILL.md updated, python wrapper noted superseded. Added fixture testdata/fixtures/aikido-dct.tbx + 10 golden tests. Regenerated both schema golden files. make build green. NOTE for next dev: ter-lutz (FEAT-2/3 export/show/list + lookup canonical-shape upgrade) is the remaining ready ticket; it will make lookup emit the same canonical shape search already uses.

@@ -4229,6 +4229,69 @@ func TestLookup_InvalidField_Golden(t *testing.T) {
 	})
 }
 
+// Golden CLI tests — Search
+
+func TestSearch_RomajiNoHyphen_Golden(t *testing.T) {
+	runGolden(t, "search/romaji", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "katatedori",
+	})
+}
+
+func TestSearch_HiraganaReading_Golden(t *testing.T) {
+	runGolden(t, "search/hiragana", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "かたてどり",
+	})
+}
+
+func TestSearch_MacronFold_Golden(t *testing.T) {
+	runGolden(t, "search/macron", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "kokyu",
+	})
+}
+
+func TestSearch_SubstringEn_Golden(t *testing.T) {
+	runGolden(t, "search/substring", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "grab",
+	})
+}
+
+func TestSearch_NotFound_Golden(t *testing.T) {
+	runGolden(t, "search/not_found", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "zzzz",
+	})
+}
+
+func TestSearch_Fields_Golden(t *testing.T) {
+	runGolden(t, "search/fields", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "katatedori",
+		"--fields", "results.concept_id",
+	})
+}
+
+func TestSearch_IncludeDefinitions_Golden(t *testing.T) {
+	runGolden(t, "search/include_definitions", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "wrist",
+		"--include", "definitions",
+	})
+}
+
+func TestSearch_LangFilter_Golden(t *testing.T) {
+	runGolden(t, "search/lang_filter", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "grab", "--lang", "ja",
+	})
+}
+
+func TestSearch_InvalidInclude_Golden(t *testing.T) {
+	runGolden(t, "search/invalid_include", []string{
+		"terminology", "--tbx", "testdata/fixtures/aikido-dct.tbx", "search", "katatedori",
+		"--include", "bogus",
+	})
+}
+
+func TestSearch_NoTBX_Golden(t *testing.T) {
+	runGolden(t, "search/no_tbx", []string{"terminology", "search", "katatedori"})
+}
+
 // Golden CLI tests — Schema
 
 func TestSchema_Full_Golden(t *testing.T) {

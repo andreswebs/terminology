@@ -1,0 +1,3 @@
+Incorrect Usage: invalid value "bogus" for flag -include: invalid include value bogus; accepted: definitions, notes, contexts, subject_field
+
+{"schema_version":1,"ok":false,"error":{"code":"invalid_value","message":"invalid value \"bogus\" for flag -include: invalid include value bogus; accepted: definitions, notes, contexts, subject_field"}}

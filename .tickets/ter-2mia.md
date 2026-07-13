@@ -1,6 +1,6 @@
 ---
 id: ter-2mia
-status: open
+status: closed
 deps: []
 links: []
 created: 2026-07-12T11:18:13Z
@@ -230,3 +230,9 @@ Run `make build` from the project root. Tighter loop:
 `go test ./src/internal/write/... ./src/internal/output/...`, then finish with a
 full `make build`. Do not silence lint with `_ =`.
 
+
+## Notes
+
+**2026-07-13T17:07:31Z**
+
+GAP-2 fixed. Added InvalidInputError + FieldError + describeJSONError classifier in src/internal/write/jsonerr.go; both ParseJSONInput and ParseApplyJSON now route decode errors through it. Classifies *json.UnmarshalTypeError (type_mismatch, names path/expected/actual), DisallowUnknownFields (unknown_field, prefix-matched), and *json.SyntaxError + io.ErrUnexpectedEOF/EOF (syntax). InvalidInputError.Unwrap() returns the ErrInvalidInput sentinel so errors.Is + exit 65 are preserved; ErrorDetails() surfaces FieldError under error.details. Unrecognized errors fall back to the old ErrInvalidInput.Wrap. Note: Go's json.UnmarshalTypeError.Field does NOT include the array index, so apply paths are 'concepts.definitions', not 'concepts[0].definitions' (the [N] index is not reconstructable from stdlib without re-parsing; left as the ticket's nice-to-have). Regenerated golden testdata/apply/invalid_json (now names the syntax error). Docs updated: write-details.md JSON limitations bullet, error-handling.md ADR. Tests: src/internal/write/jsonerr_test.go cycles 1-5. make build passes.

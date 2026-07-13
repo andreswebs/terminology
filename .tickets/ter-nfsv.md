@@ -1,6 +1,6 @@
 ---
 id: ter-nfsv
-status: open
+status: closed
 deps: [ter-po3t, ter-2mia]
 links: []
 created: 2026-07-12T11:51:37Z
@@ -222,3 +222,9 @@ errors first avoids conflicts and means a mistyped `languages.<lang>.definitions
 surfaces through GAP-2's field-level error machinery rather than the old generic
 one.
 
+
+## Notes
+
+**2026-07-13T17:13:52Z**
+
+FEAT-1 done. Added output.WriteTermGroup.Definitions ([]string, langSec-scoped basic:definition), wired both directions (WriteResultToConcept input; new write.ConceptToWriteResult output). Centralized the canonical Concept->WriteResult serializer in package write (serialize.go: ConceptToWriteResult + TermToWriteTerm), moved from commands; commands.buildWriteResult is now a delegator and commands.tbxTermToWriteTerm removed. Round-trip lossless for feedback-relevant fields (Cycle 4 via ConceptsEqual). DECISION: concept-level Graphics/CustomerSubset/ProjectSubset and langSec Sources are NOT in WriteResult -> documented as omitted (edit via --format tbx), not added. Regenerated TestSchema_Full_Golden (field added to WriteTermGroup schema). Docs: write-details.md documents languages.<lang>.definitions + FEAT-4 workaround; removed the 'No per-language definitions' limitation. cli-design.md needed no change (no formal write-payload field table). E2E verified: apply -> emits per-langSec basic:definition -> validate ok -> idempotent re-apply=unchanged. make build passes. Note for next: no project markdownlint config exists (~/.markdownlint.yaml and repo both missing); make build does not lint markdown. Unblocks ter-lutz (read commands) and ter-2d5b (search).
