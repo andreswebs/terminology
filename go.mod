@@ -5,7 +5,7 @@ go 1.26.5
 require (
 	github.com/cloudflare/ahocorasick v0.0.0-20240916140611-054963ec9396
 	github.com/rogpeppe/go-internal v1.14.1
-	github.com/urfave/cli/v3 v3.9.0
+	github.com/urfave/cli/v3 v3.10.1
 	github.com/yuin/goldmark v1.8.2
 	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
