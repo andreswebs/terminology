@@ -8,7 +8,7 @@
 
 The set of TBX-Linguist data-category fields (e.g. `administrativeStatus`,
 `register`, `crossReference`) appears in three places in
-[`internal/tbx/linguist`](../../src/internal/tbx/linguist):
+[`internal/tbx/linguist`](../../internal/tbx/linguist):
 
 - `dialect.go` — `dialectDCT` / `dialectDCA` key closures map an element to a
   semantic field key (the **read** direction, per dialect).
@@ -47,7 +47,7 @@ emit}` table. We considered it and **rejected it.**
 
 Coverage — not deduplication — is the real risk, and it is closed by the
 reflection guard `TestRoundTrip_CoversEveryTermField` in
-[`roundtrip_test.go`](../../src/internal/tbx/linguist/roundtrip_test.go). Adding
+[`roundtrip_test.go`](../../internal/tbx/linguist/roundtrip_test.go). Adding
 a field to `tbx.Term` fails that test until a fixture exercises it, which then
 engages the byte-exact round-trip tests to lock its reader/dialect/writer
 spelling.

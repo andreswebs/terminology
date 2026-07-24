@@ -8,9 +8,9 @@
 
 Picklist conformance (a term's `administrativeStatus`, `partOfSpeech`,
 `register`, etc. being a member of the accepted set in
-[`tbx/picklist.go`](../../src/internal/tbx/picklist.go)) is checked at
+[`tbx/picklist.go`](../../internal/tbx/picklist.go)) is checked at
 **decode time** by `checkPicklist` in
-[`linguist/reader.go`](../../src/internal/tbx/linguist/reader.go), which emits
+[`linguist/reader.go`](../../internal/tbx/linguist/reader.go), which emits
 `invalid_picklist` warnings as part of the `(glossary, []Warning, error)` decode
 result. `Glossary.Validate` performs only **structural** checks (duplicate ids,
 unresolved cross-references, missing terms, malformed language tags) and

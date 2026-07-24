@@ -2,6 +2,9 @@
 
 > **Status**: APPROVED. Scope, architecture, and idioms for the
 > dialect-agnostic domain model and the TBX-Linguist reader/writer pair.
+>
+> **Note**: the Go module moved from `src/` to the repo root after this spec
+> was written; paths below that begin with `src/` now live at the repo root.
 
 ## Scope
 

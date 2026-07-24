@@ -3,6 +3,16 @@
 > **Status**: APPROVED. Decisions locked in the table below. No
 > business logic in this epic; that lands in E2–E10 via TDD vertical
 > slices, one command at a time.
+>
+> **Note**: the Go module moved from `src/` to the repo root after this spec
+> was written; paths below that begin with `src/` now live at the repo root.
+>
+> **Historical note**: exit-code references below (including the stub
+> `75`/`under_construction` scheme) predate
+> [ADR 0001](../adr/0001-exit-code-taxonomy.md), which is now
+> authoritative: usage errors are `64`, I/O errors `74`, `75` is now
+> reserved for lock contention (`tbx_locked`), and the unclassified
+> fallback is `70`.
 
 ## Decisions
 
@@ -386,7 +396,7 @@ func Current() string {
 `internal/app/root.go` sets `Root().Version = version.Current()`, so
 urfave populates `--version` / `-v` from a single source.
 
-`Makefile` carries a `RELEASE_VERSION ?= ` variable threaded via
+`Makefile` carries a `RELEASE_VERSION ?=` variable threaded via
 `-ldflags "-X .../version.Override=$(RELEASE_VERSION)"` in
 `make release` (per [E10](010-release.md)).
 

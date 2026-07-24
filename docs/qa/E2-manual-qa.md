@@ -85,7 +85,7 @@ make build
 
 # 2. Bind convenience variables.
 export TT="./bin/terminology-$(go env GOOS)-$(go env GOARCH)"
-export FIXTURES="src/internal/tbx/linguist/testdata"
+export FIXTURES="internal/tbx/linguist/testdata"
 
 # 3. Smoke check.
 $TT --version
@@ -101,9 +101,9 @@ If any of steps 1–4 fails, **stop**: build or fixture tree is broken.
 
 - All E2 tickets closed.
 - `make build` exits 0.
-- `cd src && go test ./...` exits 0.
+- `go test ./...` exits 0.
 - Canonical fixtures exist in
-  `src/internal/tbx/linguist/testdata/canonical/`.
+  `internal/tbx/linguist/testdata/canonical/`.
 
 ## Exit criteria
 

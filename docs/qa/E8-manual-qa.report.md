@@ -27,7 +27,7 @@ All previously-failing tests pass on retest after fixes.
 ### BUG-001: Crossref validator is order-dependent (single-pass) — FIXED (ter-xjpk)
 
 **Severity**: High (P0) — blocked idempotency
-**Root cause**: `src/internal/tbx/validate.go` line 22–34. The validator
+**Root cause**: `internal/tbx/validate.go` line 22–34. The validator
 populated `idSeen` as it iterated through concepts and checked crossrefs
 against only what had been seen so far. When apply wrote concepts sorted
 alphabetically, `sefirah` (which references `tzimtzum`) appeared before
@@ -40,7 +40,7 @@ concept IDs, pass 2 validates crossrefs against the complete set.
 ### BUG-002: `ErrApplyValidationFailed` sentinel never returned — FIXED (ter-827j)
 
 **Severity**: Medium (P1)
-**Root cause**: `src/internal/write/errors.go` declared
+**Root cause**: `internal/write/errors.go` declared
 `ErrApplyValidationFailed` (code `"apply_validation_failed"`, exit 1) but
 no code path in `reconcile.go` or `apply.go` returned it.
 **Fix**: Added `validateForApply()` that collects all per-concept fatal

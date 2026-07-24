@@ -1,5 +1,13 @@
 # Learnings
 
+## ter-ve3i — Migrate exit codes to fleet taxonomy (ADR 0001)
+
+- The exit code lives as the second int argument to `terr.New`/`terr.Newf` at every sentinel/error site, plus two boundary values in `output.ExitCodeFor` (usage-classification branch and the final fallback). There is no central table to flip — migration is find-and-replace across sentinels, the `io_error` `Newf` sites, and the two `ExitCodeFor` returns, then the per-command registry in `output/types.go`.
+- The `RegisterExitCodes` sets must be a *superset* of what goldens actually emit (the conformance test asserts membership, not equality per-golden). Adding 70 (fallback, reachable from any command) and 75 (only where `tbx.Save`/`SaveLocked` is reachable: concept add/update/remove, term add/deprecate, apply, init) is safe and required.
+- `input_too_large` moves 2→65 (oversize payload is data rejected, not CLI misuse), distinct from the usage 2→64 bulk. In tests these 5 blocks (validate/scan/check/extract/apply) were disambiguated from usage-2 assertions by the trailing `assertErrorCode(..., "input_too_large")` line — a single 0-flag perl slurp replace over the identical block handled all 5.
+- The ADR-required conformance test (`internal/app/exit_conformance_test.go`) walks `testdata/*/clean.exit`, derives the command via first-path-segment with `_`→` ` (so `concept_add`→"concept add"), and asserts membership in `output.ExitCodesFor(cmd)`. Non-leaf golden dirs — `fixtures`, `sanitize` (cross-command), and bare `concept`/`term` parents (which only emit `no_subcommand`, not registered) — are skipped and logged, not silently dropped.
+- Golden regeneration (`go test ./internal/app/ -update`) can surface pre-existing stale goldens unrelated to your change. Here `validate/nesting_too_deep/clean.stderr` flipped `validation_error`→`invalid_input` because uncommitted in-flight working-tree edits (`reader.go` now returns coded `tbx.ErrNestingTooDeep`; `wrapLoadError` passes coded errors through). Verify each unexpected golden diff against current behavior before accepting; regenerate only what reflects real behavior and call it out.
+
 ## BETA ter-z62o — preserve TBX header on round-trip
 
 - New canonical fixtures must be reachable by `TestRoundTrip_Canonical` (which globs `testdata/canonical/*.tbx` and asserts byte-exact read→write). Any new fixture immediately locks the writer's canonical output for its header shape, so the writer must emit empty header sections in the exact same order/whitespace the fixture uses.
@@ -678,7 +686,7 @@
   returns only the static sentinel message and `output.EmitError` renders
   `coded.Error()`, so `ErrInvalidInput.Wrap(jsonErr)` discarded everything
   `encoding/json` already knew. The fix is a dedicated error type, not a `.Wrap`.
-- `InvalidInputError` (in `src/internal/write/jsonerr.go`) implements `terr.Coded`
+- `InvalidInputError` (in `internal/write/jsonerr.go`) implements `terr.Coded`
   (reusing `ErrInvalidInput`'s code/exit/hint) + `output.Detailed` (returns a
   `FieldError`), and its `Unwrap()` returns the `ErrInvalidInput` sentinel — that
   is what keeps `errors.Is(err, ErrInvalidInput)` true and exit 65 intact while
@@ -755,6 +763,33 @@
   and rejects unknown values with `urfcli.Exit(..., 2)` (exit 2, `invalid_value`
   via `classifyUsageError`). `splitInclude` is the single comma-parser reused by
   both the validator and the action.
+
+## ter-lot8 — Go module moved from src/ to repo root
+
+- The module path (`github.com/andreswebs/terminology`) already omitted `src`,
+  so the whole migration is a pure file move plus config edits: `git mv
+  src/{go.mod,go.sum,.golangci.yml,cmd,internal} .` then `rmdir src`. No `.go`
+  file changed and every import still resolves, because the declared path was
+  always rooted at the repo, just physically misplaced under `src/`.
+- `git mv` preserves pre-existing *unstaged* edits: files that had working-tree
+  modifications before the move show as `RM` in `git status --short` (staged
+  rename + working-tree modification). The moves land as true renames in the
+  diff, and the modifications ride on top untouched.
+- GOTCHA: after the move, `golangci-lint` reported a phantom `unused` issue
+  anchored to a stale `src/internal/schema/schema_test.go` cache path (a file
+  that no longer exists). It is a cache artifact, not a real regression —
+  `golangci-lint cache clean` clears it and lint returns to `0 issues`.
+- Makefile kept its `cd $(SRC_DIR) &&` recipe prefixes; only `SRC_DIR` was
+  repointed to `$(CURDIR)`, so the diff is one line and the `cd` becomes a
+  harmless no-op. Stripping the prefixes was deliberately deferred.
+- Release SBOM step moved from `path: src` to `path: .` plus a new root
+  `.syft.yaml` excluding `bin/`, `dist/`, `docs/`, `.git/`. The exclude keeps
+  the SBOM to Go module deps only: the step runs after `make dist`, so a bare
+  root scan would otherwise ingest the freshly-built binaries and archives.
+- Historical specs (`001`, `002`) keep their `src/`-era bodies verbatim; a
+  one-line note at the top records that paths beginning with `src/` now live at
+  the repo root. Non-doc `src/` grep hits in `urfave-cli-reference.md` are
+  `cli-altsrc/v3` false positives — leave them.
 - Registering `SearchEnvelope` + exit codes in `output/types.go` `init()`
   changed the reflective schema output → regenerate both `TestSchema_Full_Golden`
   and `TestSchema_CommandFilter_Golden` with `-update` (same pattern as every

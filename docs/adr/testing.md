@@ -207,7 +207,7 @@ fixture-driven heavy tests.
 ## Test fixtures layout
 
 ```
-src/internal/tbx/linguist/testdata/
+internal/tbx/linguist/testdata/
 ├── canonical/                   # round-trip identity
 │   ├── minimal-dct.tbx
 │   ├── linguist-with-transactions.tbx
@@ -223,7 +223,7 @@ src/internal/tbx/linguist/testdata/
     ├── decode/
     └── ...
 
-src/internal/app/testdata/
+internal/app/testdata/
 ├── validate/
 │   ├── clean.stdout
 │   ├── clean.stderr

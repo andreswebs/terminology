@@ -1,0 +1,1 @@
+{"schema_version":1,"ok":false,"error":{"code":"invalid_input","message":"XML nesting depth exceeds maximum of 256 levels","hint":"check that the file is a well-formed TBX document; nesting deeper than 256 levels is not supported"}}

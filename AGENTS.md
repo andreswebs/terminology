@@ -34,9 +34,9 @@ introspection via `terminology schema`.
   agent usage scenarios.
 - [`docs/research/`](docs/research/) — external references (e.g. `urfave-cli`, TBX-Linguist and TBX-standard
   dialect notes).
-- Go source: `src/`. Entry point [`src/cmd/terminology/main.go`](src/cmd/terminology/main.go);
-  all logic lives under `src/internal/` (deliberately unimportable as a
-  public library).
+- Go source lives at the repo root. Entry point
+  [`cmd/terminology/main.go`](cmd/terminology/main.go); all logic lives under
+  `internal/` (deliberately unimportable as a public library).
 
 ## Ticket Workflow
 
@@ -124,8 +124,8 @@ When creating new task tickets for an epic, add the exit gate as a dep:
 
 ## Build & Validation
 
-All commands are run from the project root via `make`. Go source lives under
-`src/`.
+All commands are run from the project root via `make`. Go source lives at the
+repo root.
 
 | Command          | Purpose                                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------- |

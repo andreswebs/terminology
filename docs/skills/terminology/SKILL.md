@@ -34,7 +34,7 @@ All commands produce JSON on stdout for success and a JSON error envelope on std
 ```
 
 - `hint` is omitted (not empty string) when absent
-- `--format text` renders: `✗ <message>` + optional `  hint: <hint>` on next line
+- `--format text` renders: `✗ <message>` + optional `hint: <hint>` on next line
 
 ### Stream routing
 
@@ -49,13 +49,17 @@ Capture pattern: `terminology ... 2>err.json` — stdout has results, stderr has
 
 ## Exit codes
 
+Exit codes follow the family-wide taxonomy in ADR 0001.
+
 | Code | Meaning                                                      | When                                                                                                               |
 | ---- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | 0    | Success                                                      | All commands                                                                                                       |
 | 1    | Warnings / no results / violations / apply validation failed | validate (warnings), lookup / search / show (not found), extract (no candidates), check (violations), apply (per-concept failures) |
-| 2    | Usage error                                                  | All commands (bad flags, missing args, mutex violations)                                                           |
-| 3    | I/O error                                                    | scan, check, extract, apply (file not found, locked)                                                               |
-| 65   | Validation / data error                                      | validate (bad TBX, strict errors), write commands, apply (invalid_input, dangling_crossref)                        |
+| 64   | Usage error (`EX_USAGE`)                                     | All commands (bad flags, missing args, mutex violations, `no_tbx_path`, `invalid_field`, `language_required`)      |
+| 65   | Validation / data error (`EX_DATAERR`)                       | validate (bad TBX, strict errors), write commands, oversize inputs (`input_too_large`), apply (invalid_input, dangling_crossref) |
+| 70   | Internal error (`EX_SOFTWARE`)                               | Unclassified fallback (a bug)                                                                                      |
+| 74   | I/O error (`EX_IOERR`)                                       | scan, check, extract, apply, init, write commands (file not found)                                                 |
+| 75   | Temp failure (`EX_TEMPFAIL`)                                 | write commands when the TBX file is locked by a concurrent writer (`tbx_locked`; retryable)                        |
 
 **Exit 1 with `ok:true`** means "no results" (not an error). **Exit 1 with `ok:false`** means violations or validation failures.
 
@@ -71,7 +75,7 @@ terminology init --tbx glossary.tbx --source-lang en --dry-run   # render to std
 ```
 
 - Required: `--source-lang` (BCP 47 tag, becomes the root `xml:lang`)
-- Refuses to overwrite an existing file (exit 3, `io_error`)
+- Refuses to overwrite an existing file (exit 74, `io_error`)
 - `--dry-run` renders the skeleton without writing
 
 The skeleton is the canonical empty glossary — bootstrap with this before
@@ -180,7 +184,7 @@ terminology schema                              # list all commands
 terminology schema --command lookup             # single-command detail
 ```
 
-Returns flags, envelope structure, exit codes, and error codes. Use this to discover valid `--fields` paths for any command. Unknown `--command` → exit 2.
+Returns flags, envelope structure, exit codes, and error codes. Use this to discover valid `--fields` paths for any command. Unknown `--command` → exit 64.
 
 ### extract
 
@@ -212,7 +216,7 @@ terminology scan document.md --tbx glossary.tbx --lang en --context 120
 - `--context N` (default 80): N/2 chars per side of match
 - `--lang` restricts compiled patterns; frontmatter `lang:` overrides flag
 - Always exits 0 on success (informational, even with zero matches)
-- Exit 3 for I/O errors
+- Exit 74 for I/O errors
 
 Matcher: case-insensitive, Hebrew niqqud stripping, diacritics strict (accented chars must match exactly — `razón` ≠ `razon`), multi-word terms match across whitespace.
 
@@ -224,7 +228,7 @@ Check terminology consistency between source and target files.
 terminology check source.md target.md --tbx glossary.tbx --source-lang en --target-lang he
 ```
 
-- Language resolution: frontmatter `lang:` → CLI flags → `language_required` error (exit 2)
+- Language resolution: frontmatter `lang:` → CLI flags → `language_required` error (exit 64)
 - Violation types: `missing` (preferred target absent), `forbidden_variant` (deprecated/superseded used), `admitted_variant` (admitted term used)
 - `--strict` promotes `admitted_variant` from warning to violation
 - Only checks concepts found in source file
@@ -351,7 +355,7 @@ Always work on copies when testing writes.
 terminology lookup "term" --tbx glossary.tbx --fields results.concept_id,results.languages.en
 ```
 
-Paths are envelope-relative. Invalid path → exit 2, `invalid_field`. Use `terminology schema --command CMD` to discover valid paths.
+Paths are envelope-relative. Invalid path → exit 64, `invalid_field`. Use `terminology schema --command CMD` to discover valid paths.
 
 ## Gotchas
 
@@ -364,7 +368,7 @@ Paths are envelope-relative. Invalid path → exit 2, `invalid_field`. Use `term
 - **Full TBX documents rejected on write.** Only `<conceptEntry>` fragments or `<conceptEntryList>` wrappers accepted as stdin.
 - **check streams differ from other commands.** Violations produce full results on stdout AND a short summary on stderr.
 - **apply update is wholesale replace.** Payload is authoritative — omitted fields and langSecs are dropped, not preserved.
-- **Advisory file locking.** Writes acquire `${TBX}.lock` (fcntl). Non-blocking, fails fast with `tbx_locked` (exit 3).
+- **Advisory file locking.** Writes acquire `${TBX}.lock` (fcntl). Non-blocking, fails fast with `tbx_locked` (exit 75).
 
 ## Reference files
 

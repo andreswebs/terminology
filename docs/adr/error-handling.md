@@ -149,30 +149,34 @@ failure mode into one of these two buckets.
   Exit code is **0** (clean) or **1** (warnings/partial). No `error`
   field is present.
 - **Fatal** — envelope is `{ok: false, error: {code, message, hint}}`
-  with **no result fields** outside the `error` object. Exit code is
-  **≥ 2**.
+  with **no result fields** outside the `error` object. Exit code is a
+  failure class (**≥ 64**).
 
 ## Exit code families
 
-Exit codes follow BSD `sysexits.h` where applicable. The mapping below
-is authoritative; sentinels in `internal/<pkg>/errors.go` carry the
-exit code as the second argument to `terr.New(...)`. See
-[`docs/cli-design.md`](cli-design.md) §Design principles #2 for the
-narrative rationale.
+Exit codes follow the family-wide taxonomy in
+[ADR 0001](0001-exit-code-taxonomy.md), which is the authority; the
+mapping below records how this tool applies it. Sentinels in
+`internal/<pkg>/errors.go` carry the exit code as the second argument to
+`terr.New(...)`. See [`docs/cli-design.md`](cli-design.md) §Design
+principles #2 for the narrative rationale.
 
-| Code | Class                | Meaning                                                              |
-| ---- | -------------------- | -------------------------------------------------------------------- |
-| 0    | success              | Clean run.                                                           |
-| 1    | warnings / partial   | Recoverable: warnings present or partial results returned.           |
-| 2    | usage error          | CLI surface itself was misused (`no_tbx_path`, `invalid_field`).     |
-| 3    | I/O error            | Filesystem failure independent of payload validity.                  |
-| 65   | validation_error     | `EX_DATAERR` — payload rejected. `validate`, `apply`, write-side input rejection (`duplicate_id`, `not_found`, `dangling_crossref`, `invalid_id`, `invalid_picklist`), `schema --command UNKNOWN`. |
+| Code | Class              | Meaning                                                                                                                                                                                            |
+| ---- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | success            | Clean run.                                                                                                                                                                                         |
+| 1    | warnings / partial | Recoverable: warnings present, partial results, not-found, or apply validation failed.                                                                                                             |
+| 64   | usage error        | `EX_USAGE` — CLI surface itself was misused (`no_tbx_path`, `invalid_field`, `language_required`, `no_subcommand`, `merge_replace_mutex`, argv parse failures).                                     |
+| 65   | validation_error   | `EX_DATAERR` — payload or input data rejected. `validate`, `apply`, write-side input rejection (`duplicate_id`, `not_found`, `dangling_crossref`, `invalid_id`, `invalid_picklist`), `input_too_large`, `schema --command UNKNOWN`. |
+| 70   | internal error     | `EX_SOFTWARE` — the `ExitCodeFor` fallback for an unclassified error (a bug).                                                                                                                       |
+| 74   | I/O error          | `EX_IOERR` — filesystem failure independent of payload validity (`io_error`).                                                                                                                      |
+| 75   | temp failure       | `EX_TEMPFAIL` — transient contention: `tbx_locked` (another process is writing; retry).                                                                                                            |
 
-`no_tbx_path` and `invalid_field` remain `exit_code: 2` (usage-error
-class — argv was syntactically fine but referenced something invalid in
-the CLI surface itself, not in the data). Everything that rejects
-payload data — file contents, write-command inputs, apply manifests —
-maps to **65**.
+Usage-class errors (argv was syntactically fine but referenced
+something invalid in the CLI surface itself, not in the data) map to
+**64**. Everything that rejects payload data — file contents,
+write-command inputs, apply manifests, oversize inputs — maps to **65**.
+Filesystem failures map to **74**; a lock held by a concurrent writer
+maps to **75** (retryable).
 
 ## `urfave/cli/v3` integration
 
@@ -187,7 +191,7 @@ type ExitCoder interface {
 
 Our `terr.Coded` extends it with `Code` and `Hint`. urfave's
 `HandleExitCoder` is a wrapper for "call `os.Exit(err.ExitCode())`" — we
-**do not** use it directly because we need to emit our envelope *before*
+**do not** use it directly because we need to emit our envelope _before_
 exiting. `main.go` handles the error path itself (layer 3 above).
 
 ## Multi-error aggregation
@@ -224,7 +228,7 @@ Both `--format json` and `--format text` are produced from the same
 - **Text** — one line per field, with the hint on a two-space-indented
   continuation line:
 
-  ```
+  ```txt
   ✗ command: message
     hint: ...
   ```
@@ -239,9 +243,9 @@ The error envelope is the **result**. Logs are diagnostic. The two never
 duplicate:
 
 - The envelope says `{code: "no_tbx_path", message: "no TBX file path
-  provided"}`.
+provided"}`.
 - The log says `slog.Error("command failed", "code", "no_tbx_path",
-  "command", "validate", "args", os.Args[1:])`.
+"command", "validate", "args", os.Args[1:])`.
 
 The log carries operational metadata (command, args, run-id, timing);
 the envelope carries the contract. Stack traces (under `--debug`) attach

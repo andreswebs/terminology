@@ -3,6 +3,11 @@
 > **Status**: APPROVED. The read commands that don't depend on the
 > matcher, plus the shared `internal/output` envelope helpers consumed
 > by every read and write command.
+>
+> **Historical note**: exit-code snapshots below (e.g. `[0, 1, 65, 3]`)
+> predate [ADR 0001](../adr/0001-exit-code-taxonomy.md), which is now
+> authoritative: usage errors are `64`, I/O errors `74`, lock contention
+> `75`, and the unclassified fallback `70`.
 
 ## Scope
 

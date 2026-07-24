@@ -62,8 +62,8 @@ make build
 
 # 2. Bind convenience variables.
 export TT="./bin/terminology-$(go env GOOS)-$(go env GOARCH)"
-export FIXTURES="src/internal/tbx/linguist/testdata"
-export APP_FIXTURES="src/internal/app/testdata/fixtures"
+export FIXTURES="internal/tbx/linguist/testdata"
+export APP_FIXTURES="internal/app/testdata/fixtures"
 
 # 3. Smoke check.
 $TT --version

@@ -30,7 +30,7 @@ interactive lookup, debugging, and curation. Every interface decision is
 driven by the following properties:
 
 1. **Machine-readable output.** All commands emit JSON to stdout by default. Human-readable output is opt-in via `--format=text` (indented hierarchical blocks with `✓`/`✗` status symbols — no color, no tables, no Unicode dependency beyond status glyphs).
-2. **Meaningful exit codes.** `0` indicates success. `1` indicates a logical "not found" or "violations exist" — not an error, but actionable. `2` indicates usage error (argv parse failure). `3` indicates I/O or storage error. `65` (the BSD `EX_DATAERR` convention) indicates a validation error — input data was rejected and the operation could not complete; state is unchanged. Emitted by `validate` (unparseable file), `apply` (payload validation failed), and write commands for runtime input rejection (`duplicate_id`, `not_found`, `dangling_crossref`, `invalid_id`, `invalid_picklist`). `75` (the BSD `EX_TEMPFAIL` convention) was used during development for the transient "under construction" state emitted by stub commands. All commands are now implemented; exit code 75 is no longer emitted.
+2. **Meaningful exit codes.** The tool follows the family-wide taxonomy in [ADR 0001](adr/0001-exit-code-taxonomy.md). `0` indicates success. `1` indicates a logical "not found" or "violations exist" — not an error, but actionable. `64` (BSD `EX_USAGE`) indicates a usage error (argv parse failure, or a reference to something invalid in the CLI surface itself, such as `no_tbx_path`, `invalid_field`, `language_required`). `65` (BSD `EX_DATAERR`) indicates a validation error — input data was rejected and the operation could not complete; state is unchanged. Emitted by `validate` (unparseable file), `apply` (payload validation failed), oversize inputs (`input_too_large`), and write commands for runtime input rejection (`duplicate_id`, `not_found`, `dangling_crossref`, `invalid_id`, `invalid_picklist`). `70` (BSD `EX_SOFTWARE`) is the fallback for an unclassified internal error. `74` (BSD `EX_IOERR`) indicates an I/O or storage error. `75` (BSD `EX_TEMPFAIL`) indicates transient lock contention (`tbx_locked`) and is retryable.
 3. **Single static binary.** No runtime dependencies. Cross-compiles for Linux, macOS, Windows. Distributed as a single executable.
 4. **Structured error envelope.** Errors emit JSON to **stderr** when `--format=json`, human-readable text to stderr when `--format=text`. The JSON shape is `{ "ok": false, "error": { "code": "...", "message": "...", "hint": "..." } }`. Stdout stays clean for piping.
 5. **Field masks on reads.** Every read command accepts `--fields a,b,c.d` to trim the output. Defaults are lean (just enough to identify what was found); callers opt into more detail. This protects the agent's context window as the data model grows.
@@ -621,7 +621,7 @@ terminology check SRC TGT [--source-lang LANG] [--target-lang LANG] [--tbx PATH]
 
 - `--source-lang LANG` — source language. No default; resolved as
   YAML-frontmatter `lang:` in `SRC` → `--source-lang` flag → fail with
-  `language_required` (exit `2`).
+  `language_required` (exit `64`).
 - `--target-lang LANG` — target language. Same precedence against `TGT`.
 - `--tbx PATH` — path to TBX file
 - `--strict` — admitted variants raise violations instead of warnings
@@ -880,7 +880,7 @@ terminology apply --file PAYLOAD [--prune] [--dry-run] [--transaction] [--author
 ```
 
 Exit 0 on success, 65 if any concept failed validation (none applied —
-the file is left untouched), 2 on usage error, 3 on I/O error.
+the file is left untouched), 64 on usage error, 74 on I/O error.
 
 ---
 
