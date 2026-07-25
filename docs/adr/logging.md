@@ -3,6 +3,13 @@
 > **Status**: APPROVED. `slog` configuration, level discipline, the
 > stdout/stderr separation rule.
 
+**Note**: [ADR 0004: Logging](0004-logging.md) is the authoritative
+decision record for logging; this document provides repository-specific
+detail on how terminology applies it. Where this document diverges (it
+selects verbosity with the boolean flags below instead of the
+`--log-level` flag and `TERMINOLOGY_LOG_LEVEL` fallback that ADR 0004
+specifies for the leveled posture), ADR 0004 is the decision of record.
+
 ## Rules of engagement
 
 1. **Logs go to stderr only.** Stdout is reserved for JSON envelopes.
@@ -32,7 +39,8 @@ keeps agent scripts and golden-file assertions unambiguous.
 | `--quiet`   | ERROR (no WARN noise) |         |
 
 The flags are mutually exclusive — passing more than one is a usage
-error (`exit 2`).
+error (exit 64, `EX_USAGE`, per
+[ADR 0001](0001-exit-code-taxonomy.md)).
 
 ## Wiring
 

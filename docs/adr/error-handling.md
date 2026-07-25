@@ -3,6 +3,11 @@
 > **Status**: APPROVED. Architecture and idioms for how errors flow from
 > origin → envelope → exit code. Touches every epic.
 
+**Note**: [ADR 0002: Error handling](0002-error-handling.md) is the
+authoritative decision record for error handling; this document provides
+repository-specific detail on how terminology applies it. Where the two
+disagree, ADR 0002 wins.
+
 ## Goal
 
 A single, consistent path for errors to leave the binary. Every error a
@@ -59,7 +64,7 @@ var ErrUnsupportedDialect = terr.New(
 )
 
 var ErrNoTBXPath = terr.New(
-    "no_tbx_path", 2,
+    "no_tbx_path", 64,
     "set --tbx or TERMINOLOGY_TBX",
     "no TBX file path provided",
 )
@@ -109,9 +114,10 @@ func main() {
 `output.EmitError`:
 
 1. `errors.As` into `terr.Coded` — extract `Code`, `Hint`, `Message`.
-2. If not coded: fall through to `{code: "internal_error", exit: 1}`
-   and log the raw error chain at WARN level (see
-   [logging](logging.md)).
+2. If not coded: fall through to `{code: "internal_error", exit: 70}`
+   (an unclassified error is a bug, per
+   [ADR 0002](0002-error-handling.md)) and log the raw error chain at
+   WARN level (see [logging](logging.md)).
 3. Under `--debug`, attach `slog.Any("stack", debug.Stack())` to that log
    line. The stack is never computed in normal runs (zero overhead) and
    never enters the envelope — the envelope stays contract-only.
@@ -122,7 +128,8 @@ func main() {
 `output.ExitCodeFor`:
 
 1. `errors.As` into `terr.Coded` — return `e.ExitCode()`.
-2. Else: return `1`.
+2. Else: return `70` (internal error, per
+   [ADR 0001](0001-exit-code-taxonomy.md)).
 
 ### Layer 4 — Envelope conformance
 
@@ -154,7 +161,7 @@ failure mode into one of these two buckets.
 
 ## Exit code families
 
-Exit codes follow the family-wide taxonomy in
+Exit codes follow the taxonomy in
 [ADR 0001](0001-exit-code-taxonomy.md), which is the authority; the
 mapping below records how this tool applies it. Sentinels in
 `internal/<pkg>/errors.go` carry the exit code as the second argument to
@@ -199,8 +206,10 @@ exiting. `main.go` handles the error path itself (layer 3 above).
 `validate` warnings are **not errors** — they're results. The envelope is
 `{ok: true, warnings: [...]}` (recoverable path).
 
-Cases where many failures aggregate fatally (e.g. `apply` validation
-catching 5 broken concepts):
+Cases where many failures aggregate into one reported outcome (e.g.
+`apply` validation catching 5 broken concepts; exit 1, a recoverable
+result per [ADR 0001](0001-exit-code-taxonomy.md), because the command
+completed and wrote nothing):
 
 - Use `errors.Join` to collect; expose as `terr.Coded` with code
   `apply_validation_failed`.

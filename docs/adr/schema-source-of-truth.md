@@ -3,6 +3,11 @@
 > **Status**: APPROVED. Go code is the canonical contract. The
 > `terminology schema` subcommand exposes it reflectively for agents.
 
+**Note**: [ADR 0005: Output contract](0005-output-contract.md) is the
+authoritative decision record for the output and self-description
+contract; this document provides repository-specific detail on how
+terminology applies it.
+
 ## The invariant
 
 **Go code is the source of truth.** Three concrete locations together
@@ -28,7 +33,7 @@ command tree, reflects over the output struct types, and enumerates the
 sentinel registry, then emits a JSON document describing the binary's
 contract.
 
-```
+```console
 $ terminology schema
 {
   "schema_version": 1,

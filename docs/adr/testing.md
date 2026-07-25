@@ -2,6 +2,13 @@
 
 > **Status**: APPROVED. The test layers every epic plugs into.
 
+**Note**: [ADR 0006: CLI testing](0006-cli-testing.md) is the
+authoritative decision record for CLI testing; this document provides
+repository-specific detail on how terminology applies it. Where this
+document drives the framework command tree directly instead of the
+framework-blind delegate that ADR 0006 describes, ADR 0006 is the
+decision of record.
+
 ## Goals
 
 - Every command's surface enforced (urfave-level rejection of bad args).
@@ -206,7 +213,7 @@ fixture-driven heavy tests.
 
 ## Test fixtures layout
 
-```
+```text
 internal/tbx/linguist/testdata/
 ├── canonical/                   # round-trip identity
 │   ├── minimal-dct.tbx
